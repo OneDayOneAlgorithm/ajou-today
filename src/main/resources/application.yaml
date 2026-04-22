@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:mysql://13.125.210.6:3306/todayquote
+    username: admin
+    password: todayquote1234!
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
