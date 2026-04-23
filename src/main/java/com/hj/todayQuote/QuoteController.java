@@ -39,4 +39,10 @@ public class QuoteController {
         quoteRepository.save(newQuote); // 매니저에게 장부에 적으라고 지시!
         return "장부에 성공적으로 저장되었습니다: " + text;
     }
+
+    // 기능 3: CI/CD 자동 배포 테스트용 API (헬스 체크)
+    @GetMapping("/api/health")
+    public String healthCheck() {
+        return "삐리삐리 🤖 로봇 매니저가 성공적으로 코드를 배포했습니다! 서버 100% 정상 작동 중입니다 🚀";
+    }
 }

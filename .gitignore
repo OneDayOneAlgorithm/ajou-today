@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# AWS EC2 마스터키 보안 (절대 깃허브에 올리지 않음)
+*.pem
