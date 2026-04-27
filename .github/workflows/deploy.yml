@@ -1,0 +1,51 @@
+name: Deploy to EC2
+
+# 1. 언제 이 로봇이 일할 것인가? (main 브랜치에 코드가 push 될 때마다)
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest # 로봇이 일할 가상 컴퓨터 환경
+
+    steps:
+      # 2. GitHub에 올라온 최신 코드를 로봇의 컴퓨터로 가져오기
+      - name: 최신 코드 가져오기
+        uses: actions/checkout@v3
+
+      # 3. 로봇 컴퓨터에 Java 17 세팅하기
+      - name: Java 17 세팅
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 4. 포장(Build) 권한 부여 및 포장하기
+      - name: Spring Boot 빌드(포장) 하기
+        run: |
+          chmod +x gradlew
+          ./gradlew clean bootJar
+
+      # 5. 완성된 .jar 파일을 사장님의 EC2 서버로 배달하기
+      - name: EC2로 .jar 파일 전송하기
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_KEY }}
+          source: "build/libs/*.jar"
+          target: "/home/ubuntu/"
+          strip_components: 2
+
+      # 6. EC2에 접속해서 기존 서버 끄고 새 서버 켜기 (아까 사장님이 만든 완벽한 명령어!)
+      - name: EC2에서 서버 재시작하기
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            sudo killall java || true
+            nohup java -Xms128m -Xmx512m -jar /home/ubuntu/today-quote-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
