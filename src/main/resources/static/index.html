@@ -3,90 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>오늘의 명언</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>Ajou Today 메인 포털</title>
     <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
-
     <style>
-        /* 배경 화면 꾸미기 */
         body {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin: 0; padding: 0; height: 100vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
             font-family: 'Gowun Dodum', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white; text-align: center;
         }
-        /* 명언이 들어갈 반투명 유리 상자 (글래스모피즘) */
-        .quote-box {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            padding: 40px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.3);
-            max-width: 80%;
-            width: 500px;
+        h1 { font-size: 3rem; margin-bottom: 10px; }
+        p { font-size: 1.2rem; margin-bottom: 40px; color: #d1d8e0; }
+        .menu-container { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;}
+        .menu-card {
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
+            padding: 30px 40px; border-radius: 15px; text-decoration: none; color: white;
+            font-size: 1.5rem; font-weight: bold; border: 2px solid transparent;
+            transition: all 0.3s ease; width: 200px;
         }
-        /* 명언 글씨 크기 설정 */
-        .quote-text {
-            font-size: 1.8rem;
-            line-height: 1.6;
-            margin-bottom: 30px;
-            min-height: 80px;
-            word-break: keep-all;
-        }
-        /* 버튼 꾸미기 */
-        .btn {
-            background-color: white;
-            color: #764ba2;
-            border: none;
-            padding: 12px 24px;
-            font-size: 1.1rem;
-            font-family: inherit;
-            font-weight: bold;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        /* 버튼에 마우스 올렸을 때 효과 */
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        .menu-card:hover {
+            background: rgba(255, 255, 255, 0.2); transform: translateY(-5px);
+            border: 2px solid #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
         }
     </style>
 </head>
 <body>
+<h1>Ajou.Today</h1>
+<p>당신의 하루를 채우는 작은 즐거움</p>
 
-<div class="quote-box">
-    <div class="quote-text" id="quoteText">오늘의 명언을 불러오는 중입니다...</div>
-    <button class="btn" onclick="fetchQuote()">새로운 명언 뽑기 ✨</button>
+<div class="menu-container">
+    <a href="/quote.html" class="menu-card">📜 오늘의 명언</a>
+    <a href="/game.html" class="menu-card">🍄 티모 잡기 게임</a>
 </div>
-
-<script>
-    // 백엔드(주방)에서 명언을 가져오는 자바스크립트 로봇
-    async function fetchQuote() {
-        const quoteElement = document.getElementById('quoteText');
-        quoteElement.innerText = "명언을 찾고 있어요... 🔍";
-
-        try {
-            // 사장님이 만든 API로 요청을 보냅니다!
-            const response = await fetch('/api/quote');
-            const text = await response.text();
-            // 화면에 명언을 짠! 하고 보여줍니다.
-            quoteElement.innerText = `"${text}"`;
-        } catch (error) {
-            quoteElement.innerText = "명언을 불러오는데 실패했습니다 😢";
-            console.error("에러 발생:", error);
-        }
-    }
-
-    // 인터넷 창이 처음 열릴 때 명언을 바로 한 번 뽑아줍니다.
-    window.onload = fetchQuote;
-</script>
 </body>
 </html>
