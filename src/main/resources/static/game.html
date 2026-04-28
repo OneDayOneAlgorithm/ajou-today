@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>티모 버섯 잡기</title>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0; padding: 0; height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
+            font-family: 'Gowun Dodum', sans-serif;
+            background-color: #2d3436; color: white;
+        }
+        .header { margin-top: 30px; text-align: center; }
+        .score-board { font-size: 1.5rem; margin: 10px 0; color: #00cec9; }
+        /* 게임이 진행되는 네모난 숲(보드) */
+        #game-board {
+            width: 90%; max-width: 600px; height: 400px;
+            background-color: #55efc4; border: 5px solid #00b894;
+            border-radius: 15px; position: relative; overflow: hidden;
+            cursor: crosshair; margin-bottom: 20px;
+        }
+        /* 티모 버섯 */
+        #teemo {
+            font-size: 40px; position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            user-select: none; display: none; cursor: pointer;
+        }
+        .btn {
+            background-color: #0984e3; color: white; border: none;
+            padding: 10px 20px; font-size: 1.2rem; border-radius: 8px;
+            cursor: pointer; font-family: inherit;
+        }
+        .btn:hover { background-color: #74b9ff; }
+        .back-link { margin-top: 20px; color: #b2bec3; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>🍄 티모 버섯 잡기 🍄</h1>
+    <p>버섯이 사라지기 전에 클릭하세요!</p>
+    <div class="score-board">점수: <span id="score">0</span> | 남은 시간: <span id="time">15</span>초</div>
+    <button class="btn" onclick="startGame()">게임 시작</button>
+</div>
+
+<div id="game-board">
+    <div id="teemo" onclick="catchTeemo()">🍄</div>
+</div>
+
+<a href="/" class="back-link">⬅️ 메인으로 돌아가기</a>
+
+<script>
+    let score = 0;
+    let timeLeft = 15;
+    let gameInterval;
+    let moveInterval;
+    let isPlaying = false;
+
+    const teemo = document.getElementById('teemo');
+    const scoreDisplay = document.getElementById('score');
+    const timeDisplay = document.getElementById('time');
+    const board = document.getElementById('game-board');
+
+    function startGame() {
+        if (isPlaying) return; // 이미 진행 중이면 무시
+        isPlaying = true;
+        score = 0;
+        timeLeft = 15;
+        scoreDisplay.innerText = score;
+        timeDisplay.innerText = timeLeft;
+        teemo.style.display = 'block';
+
+        // 타이머 시작 (1초마다 감소)
+        gameInterval = setInterval(() => {
+            timeLeft--;
+            timeDisplay.innerText = timeLeft;
+            if (timeLeft <= 0) endGame();
+        }, 1000);
+
+        // 버섯 이동 시작 (0.8초마다 위치 변경)
+        moveTeemo();
+        moveInterval = setInterval(moveTeemo, 800);
+    }
+
+    function moveTeemo() {
+        // 보드판 안에서 랜덤한 X, Y 좌표 계산
+        const maxX = board.clientWidth - 50;
+        const maxY = board.clientHeight - 50;
+        const randomX = Math.floor(Math.random() * maxX);
+        const randomY = Math.floor(Math.random() * maxY);
+
+        teemo.style.left = randomX + 'px';
+        teemo.style.top = randomY + 'px';
+    }
+
+    function catchTeemo() {
+        if (!isPlaying) return;
+        score += 10; // 맞추면 10점 추가
+        scoreDisplay.innerText = score;
+        moveTeemo(); // 맞추면 바로 도망감
+    }
+
+    function endGame() {
+        isPlaying = false;
+        clearInterval(gameInterval);
+        clearInterval(moveInterval);
+        teemo.style.display = 'none';
+        alert(`게임 종료! 💥\n최종 점수: ${score}점\n페이커 뺨치는 피지컬이시군요!`);
+    }
+</script>
+</body>
+</html>
