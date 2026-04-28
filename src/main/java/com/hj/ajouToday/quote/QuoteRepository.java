@@ -1,4 +1,4 @@
-package com.hj.todayQuote;
+package com.hj.ajouToday.quote;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
