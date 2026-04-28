@@ -74,11 +74,14 @@
         quoteElement.innerText = "명언을 찾고 있어요... 🔍";
 
         try {
-            // 사장님이 만든 API로 요청을 보냅니다!
-            const response = await fetch('/api/quote');
-            const text = await response.text();
-            // 화면에 명언을 짠! 하고 보여줍니다.
-            quoteElement.innerText = `"${text}"`;
+            // 💡 여기 주소를 /api/quote 에서 /api/quotes/random 으로 바꿔야 합니다!
+            const response = await fetch('/api/quotes/random');
+
+            // 💡 그리고 이제 백엔드가 객체(JSON)를 보내주므로 .json()으로 받아야 해요.
+            const data = await response.json();
+
+            // 화면에 명언을 짠! (data.content로 접근)
+            quoteElement.innerText = `"${data.content}"`;
         } catch (error) {
             quoteElement.innerText = "명언을 불러오는데 실패했습니다 😢";
             console.error("에러 발생:", error);

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Ajou Today - 관리자 페이지</title>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Gowun Dodum', sans-serif; background-color: #f5f6fa; padding: 40px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #2f3640; text-align: center; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 30px; }
+        input { flex: 1; padding: 12px; border: 1px solid #dcdde1; border-radius: 8px; font-size: 1rem; }
+        button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-add { background-color: #4cd137; color: white; }
+        .quote-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #f1f2f6; }
+        .btn-delete { background-color: #e84118; color: white; font-size: 0.8rem; }
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #7f8fa6; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📜 명언 관리 시스템</h1>
+
+    <div class="input-group">
+        <input type="text" id="quoteInput" placeholder="새로운 명언을 입력하세요...">
+        <button class="btn-add" onclick="addQuote()">등록</button>
+    </div>
+
+    <div id="quoteList">
+    </div>
+
+    <a href="/" class="back-link">⬅️ 메인으로 돌아가기</a>
+</div>
+
+<script>
+    // 1. 페이지 접속 시 비밀번호 확인 로직 (sessionStorage를 써서 새로고침해도 유지되게 합니다)
+    let adminKey = sessionStorage.getItem('adminKey');
+
+    if (!adminKey) {
+        // 암호가 없으면 물어봅니다.
+        adminKey = prompt("관리자 비밀번호를 입력하세요");
+        if (adminKey) {
+            sessionStorage.setItem('adminKey', adminKey);
+        } else {
+            alert("비밀번호를 입력하지 않아 메인으로 돌아갑니다.");
+            window.location.href = "/"; // 메인 페이지로 쫓아냄
+        }
+    }
+
+    // 2. 명언 목록 불러오기 (이건 누구나 볼 수 있으니 암호가 필요 없음)
+    async function loadQuotes() {
+        const response = await fetch('/api/quotes');
+        const quotes = await response.json();
+        const listDiv = document.getElementById('quoteList');
+        listDiv.innerHTML = '';
+
+        quotes.forEach(q => {
+            const item = document.createElement('div');
+            item.className = 'quote-item';
+            item.innerHTML = `
+                    <span>${q.content}</span>
+                    <button class="btn-delete" onclick="deleteQuote(${q.id})">삭제</button>
+                `;
+            listDiv.appendChild(item);
+        });
+    }
+
+    // 3. 🔒 명언 등록하기 (헤더에 비밀번호 추가!)
+    async function addQuote() {
+        const input = document.getElementById('quoteInput');
+        if (!input.value) return alert('내용을 입력해주세요!');
+
+        const response = await fetch('/api/quotes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Admin-Key': adminKey  // 💡 서버가 요구하는 비밀번호를 헤더에 담아 보냅니다!
+            },
+            body: JSON.stringify({ content: input.value })
+        });
+
+        if (response.ok) {
+            input.value = '';
+            loadQuotes(); // 성공 시 목록 새로고침
+        } else {
+            alert("등록 실패! 비밀번호가 틀렸거나 권한이 없습니다.");
+            sessionStorage.removeItem('adminKey'); // 틀렸으니 저장된 암호 삭제
+            location.reload(); // 페이지 새로고침해서 다시 암호 묻기
+        }
+    }
+
+    // 4. 🔒 명언 삭제하기 (헤더에 비밀번호 추가!)
+    async function deleteQuote(id) {
+        if (!confirm('정말 삭제할까요?')) return;
+
+        const response = await fetch(`/api/quotes/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Admin-Key': adminKey // 💡 여기도 비밀번호를 담아 보냅니다.
+            }
+        });
+
+        if (response.ok) {
+            loadQuotes();
+        } else {
+            alert("삭제 실패! 관리자 권한이 없습니다.");
+        }
+    }
+
+    // 스크립트 실행 시 목록 불러오기
+    if(adminKey) loadQuotes();
+</script>
+</body>
+</html>

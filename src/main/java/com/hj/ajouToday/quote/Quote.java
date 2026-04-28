@@ -19,6 +19,10 @@ public class Quote {
         this.content = content;
     }
 
+    public Long getId() {
+        return id;
+    }
+
     // 명언 내용을 꺼내보기 위한 기능
     public String getContent() {
         return content;
