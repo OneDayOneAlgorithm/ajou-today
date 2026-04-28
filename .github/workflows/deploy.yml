@@ -28,16 +28,17 @@ jobs:
           chmod +x gradlew
           ./gradlew clean bootJar
 
-      # 5. 완성된 .jar 파일을 사장님의 EC2 서버로 배달하기
-      - name: EC2로 .jar 파일 전송하기
+      # 5. 완성된 .jar 파일과 HTML 파일들을 EC2 서버로 배달하기
+      - name: EC2로 파일 전송하기
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_KEY }}
-          source: "build/libs/*.jar"
+          # jar 파일뿐만 아니라 static 폴더 통째로 보냅니다.
+          source: "build/libs/*.jar,src/main/resources/static/*"
           target: "/home/ubuntu/"
-          strip_components: 2
+          strip_components: 0 # 경로 구조를 유지하기 위해 0으로 변경하거나 조절 필요
 
       # 6. EC2에 접속해서 기존 서버 끄고 새 서버 켜기 (아까 사장님이 만든 완벽한 명령어!)
       - name: EC2에서 서버 재시작하기
