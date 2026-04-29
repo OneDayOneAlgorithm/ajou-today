@@ -33,21 +33,44 @@
 </div>
 
 <script>
-    // 1. 페이지 접속 시 비밀번호 확인 로직 (sessionStorage를 써서 새로고침해도 유지되게 합니다)
-    let adminKey = sessionStorage.getItem('adminKey');
+    // 1. 브라우저 메모장에 저장된 마패(JWT)가 있는지 확인합니다.
+    let jwtToken = sessionStorage.getItem('jwt_token');
 
-    if (!adminKey) {
-        // 암호가 없으면 물어봅니다.
-        adminKey = prompt("관리자 비밀번호를 입력하세요");
-        if (adminKey) {
-            sessionStorage.setItem('adminKey', adminKey);
+    // 🔐 인증 및 로그인 함수
+    async function authenticate() {
+        if (!jwtToken) {
+            // 토큰이 없으면 비밀번호를 물어봅니다.
+            const password = prompt("관리자 비밀번호를 입력하세요 (힌트: ajou!)");
+            if (!password) {
+                alert("비밀번호를 입력하지 않아 메인으로 돌아갑니다.");
+                window.location.href = "/";
+                return;
+            }
+
+            // 💡 [핵심] 서버의 /login 창구로 비밀번호를 보내서 토큰을 요청합니다!
+            const response = await fetch('/api/quotes/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: password })
+            });
+
+            if (response.ok) {
+                // 성공하면 서버가 아주 긴 토큰 문자열을 줍니다.
+                jwtToken = await response.text();
+                sessionStorage.setItem('jwt_token', jwtToken); // 브라우저 메모장에 저장!
+                alert("로그인 성공! 마패를 발급받았습니다.");
+                loadQuotes();
+            } else {
+                alert("비밀번호가 틀렸습니다!");
+                window.location.href = "/";
+            }
         } else {
-            alert("비밀번호를 입력하지 않아 메인으로 돌아갑니다.");
-            window.location.href = "/"; // 메인 페이지로 쫓아냄
+            // 이미 토큰이 있으면 바로 목록을 불러옵니다.
+            loadQuotes();
         }
     }
 
-    // 2. 명언 목록 불러오기 (이건 누구나 볼 수 있으니 암호가 필요 없음)
+    // 2. 명언 목록 불러오기 (누구나 볼 수 있으니 마패 불필요)
     async function loadQuotes() {
         const response = await fetch('/api/quotes');
         const quotes = await response.json();
@@ -65,7 +88,7 @@
         });
     }
 
-    // 3. 🔒 명언 등록하기 (헤더에 비밀번호 추가!)
+    // 3. 🔒 명언 등록하기 (헤더에 마패 추가!)
     async function addQuote() {
         const input = document.getElementById('quoteInput');
         if (!input.value) return alert('내용을 입력해주세요!');
@@ -74,41 +97,43 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Admin-Key': adminKey  // 💡 서버가 요구하는 비밀번호를 헤더에 담아 보냅니다!
+                'Authorization': 'Bearer ' + jwtToken  // 💡 실무 표준: Bearer 방식!
             },
             body: JSON.stringify({ content: input.value })
         });
 
         if (response.ok) {
             input.value = '';
-            loadQuotes(); // 성공 시 목록 새로고침
+            loadQuotes();
         } else {
-            alert("등록 실패! 비밀번호가 틀렸거나 권한이 없습니다.");
-            sessionStorage.removeItem('adminKey'); // 틀렸으니 저장된 암호 삭제
-            location.reload(); // 페이지 새로고침해서 다시 암호 묻기
+            alert("등록 실패! 토큰이 만료되었거나 권한이 없습니다.");
+            sessionStorage.removeItem('jwt_token'); // 썩은 마패 버리기
+            location.reload(); // 새로고침해서 다시 로그인
         }
     }
 
-    // 4. 🔒 명언 삭제하기 (헤더에 비밀번호 추가!)
+    // 4. 🔒 명언 삭제하기 (헤더에 마패 추가!)
     async function deleteQuote(id) {
         if (!confirm('정말 삭제할까요?')) return;
 
         const response = await fetch(`/api/quotes/${id}`, {
             method: 'DELETE',
             headers: {
-                'Admin-Key': adminKey // 💡 여기도 비밀번호를 담아 보냅니다.
+                'Authorization': 'Bearer ' + jwtToken // 💡 여기도 마패를 보여줍니다!
             }
         });
 
         if (response.ok) {
             loadQuotes();
         } else {
-            alert("삭제 실패! 관리자 권한이 없습니다.");
+            alert("삭제 실패! 토큰이 만료되었거나 권한이 없습니다.");
+            sessionStorage.removeItem('jwt_token');
+            location.reload();
         }
     }
 
-    // 스크립트 실행 시 목록 불러오기
-    if(adminKey) loadQuotes();
+    // 페이지 접속 시 인증부터 시작!
+    authenticate();
 </script>
 </body>
 </html>
