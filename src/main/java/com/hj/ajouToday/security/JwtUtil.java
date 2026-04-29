@@ -3,8 +3,8 @@ package com.hj.ajouToday.security;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
@@ -12,17 +12,18 @@ import java.util.Date;
 @Component // 스프링이 관리하는 부품으로 등록
 public class JwtUtil {
 
-    // 💡 서버만의 비밀 도장 (이 키가 털리면 끝장납니다. 실무에선 엄청 길고 복잡하게 씁니다)
-    // 최소 32바이트(256비트) 이상이어야 작동합니다.
-    @Value("${jwt.secret}")
-    private String SECRET_KEY;
-    private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    // 💡 실무 포인트 1: 핵심 보안 객체는 무조건 final로 선언하여 중간에 바뀌는 것을 원천 차단합니다.
+    private final Key key;
 
     // 토큰 유효기간: 1시간 (1000ms * 60 * 60)
     private final long EXPIRATION_TIME = 1000 * 60 * 60;
 
-    private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    // 💡 실무 포인트 2: '생성자 주입' 방식
+    // 스프링이 JwtUtil을 생성할 때, application.yml에서 jwt.secret 값을 강제로 가져와서 넣어줍니다.
+    // 값이 없으면 아예 객체 생성을 막아버려서 NullPointerException을 사전에 방지합니다.
+    public JwtUtil(@Value("${jwt.secret}") String secretKey) {
+        // 주입받은 비밀번호를 이용해 안전하게 암호 키 뼈대를 완성합니다.
+        this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
     // 1. JWT 토큰을 발급(생성)하는 메서드
