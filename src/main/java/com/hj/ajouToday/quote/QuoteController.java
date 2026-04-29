@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import com.hj.ajouToday.security.JwtUtil;
+import org.springframework.beans.factory.annotation.Value;
 
 @RestController
 @RequestMapping("/api/quotes")
@@ -12,7 +13,8 @@ public class QuoteController {
     private final QuoteRepository repository;
     private final JwtUtil jwtUtil; // 💡 1. 우리가 만든 도장 공방(JwtUtil)을 불러옵니다.
 
-    private final String ADMIN_PASSWORD = "ajou!";
+    @Value("${admin.password}")
+    private String adminPassword;
 
     // 생성자에 JwtUtil 추가
     public QuoteController(QuoteRepository repository, JwtUtil jwtUtil) {
@@ -40,7 +42,7 @@ public class QuoteController {
     public String login(@RequestBody Map<String, String> request) {
         String password = request.get("password");
 
-        if (ADMIN_PASSWORD.equals(password)) {
+        if (adminPassword.equals(password)) {
             return jwtUtil.generateToken(); // 비밀번호가 맞으면 JWT 토큰 발급!
         }
         throw new IllegalArgumentException("비밀번호가 틀렸습니다!");

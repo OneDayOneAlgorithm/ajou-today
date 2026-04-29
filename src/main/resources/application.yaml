@@ -8,3 +8,11 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+admin:
+  # 컴퓨터(서버)에 ADMIN_PASSWORD가 있으면 그걸 쓰고, 없으면 'ajou!'를 써라
+  password: ${ADMIN_PASSWORD:ajou!}
+
+jwt:
+  # 컴퓨터(서버)에 JWT_SECRET이 있으면 그걸 쓰고, 없으면 뒤의 긴 기본값을 써라
+  secret: ${JWT_SECRET:default-secret-key-for-local-dev-only-very-long}

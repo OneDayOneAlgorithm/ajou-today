@@ -4,6 +4,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.security.Key;
 import java.util.Date;
@@ -13,11 +14,16 @@ public class JwtUtil {
 
     // 💡 서버만의 비밀 도장 (이 키가 털리면 끝장납니다. 실무에선 엄청 길고 복잡하게 씁니다)
     // 최소 32바이트(256비트) 이상이어야 작동합니다.
-    private final String SECRET_KEY = "my-super-secret-key-for-ajou-today-admin-very-long";
+    @Value("${jwt.secret}")
+    private String SECRET_KEY;
     private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
 
     // 토큰 유효기간: 1시간 (1000ms * 60 * 60)
     private final long EXPIRATION_TIME = 1000 * 60 * 60;
+
+    private Key getSigningKey() {
+        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    }
 
     // 1. JWT 토큰을 발급(생성)하는 메서드
     public String generateToken() {

@@ -40,13 +40,18 @@ jobs:
           target: "/home/ubuntu/"
           strip_components: 0 # 경로 구조를 유지하기 위해 0으로 변경하거나 조절 필요
 
-      # 6. EC2에 접속해서 기존 서버 끄고 새 서버 켜기 (아까 사장님이 만든 완벽한 명령어!)
+      # 6. EC2에서 서버 재시작하기
       - name: EC2에서 서버 재시작하기
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_KEY }}
+          # 💡 [핵심 추가] env를 통해 로봇의 금고에서 값을 꺼내옵니다.
+          env:
+            ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+            JWT_SECRET: ${{ secrets.JWT_SECRET }}
           script: |
             sudo killall java || true
-            nohup java -Xms128m -Xmx512m -jar /home/ubuntu/ajouToday-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
+            # 💡 [핵심 추가] 명령어 맨 앞에 환경변수를 주입하면서 실행합니다!
+            ADMIN_PASSWORD=$ADMIN_PASSWORD JWT_SECRET=$JWT_SECRET nohup java -Xms128m -Xmx512m -jar /home/ubuntu/ajouToday-0.0.1-SNAPSHOT.jar > app.log 2>&1 &
