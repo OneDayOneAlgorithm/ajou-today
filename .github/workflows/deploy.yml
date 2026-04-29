@@ -54,6 +54,5 @@ jobs:
           envs: ADMIN_PASSWORD, JWT_SECRET
           script: |
             sudo killall java || true
-            rm -f /home/ubuntu/*.jar
             # 💡 [핵심 추가] 명령어 맨 앞에 환경변수를 주입하면서 실행합니다!
             ADMIN_PASSWORD=$ADMIN_PASSWORD JWT_SECRET=$JWT_SECRET nohup java -Xms128m -Xmx512m -jar ajouToday-0.0.1-SNAPSHOT.jar > /home/ubuntu/app.log 2>&1 &
