@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Ajou Survival: Power Up</title>
+    <title>Ajou Survival: Retro Sound</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <style>
         body { margin: 0; background-color: #000; color: white; text-align: center; font-family: 'Malgun Gothic', sans-serif; overflow: hidden; }
@@ -23,7 +23,7 @@
 </head>
 <body>
 
-<h1>💧 Ajou Survival : 파워업 모드</h1>
+<h1>💧 Ajou Survival : 8비트 사운드 모드</h1>
 
 <div id="ui-panel">
     ❤️ HP: <span id="hp" class="hp">100</span> |
@@ -37,6 +37,59 @@
 </div>
 
 <script>
+    // 💡 [신규] 브라우저 내장 오디오 신시사이저 (외부 mp3 파일 없이 소리 생성!)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+        // 브라우저 정책상 유저가 화면을 클릭/조작한 이후에만 소리가 납니다.
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'shoot') {
+            // 뾱! (레이저 발사 소리)
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(880, now);
+            osc.frequency.exponentialRampToValueAtTime(110, now + 0.1);
+            gainNode.gain.setValueAtTime(0.03, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        } else if (type === 'hit') {
+            // 펑! (몬스터 폭발 소리)
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(10, now + 0.2);
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        } else if (type === 'item') {
+            // 띠리링~ (아이템 획득 소리)
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.setValueAtTime(660, now + 0.1);
+            osc.frequency.setValueAtTime(880, now + 0.2);
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        } else if (type === 'damage') {
+            // 윽! (플레이어 피격 소리)
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.setValueAtTime(50, now + 0.1);
+            gainNode.gain.setValueAtTime(0.2, now);
+            gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        }
+    }
+
     const config = {
         type: Phaser.AUTO, width: 800, height: 600, backgroundColor: '#1a1a1a',
         physics: { default: 'arcade', arcade: { debug: false } },
@@ -49,11 +102,10 @@
     let isGameOver = false;
     let gameToken = "";
 
-    // 💡 [신규] 기본 연사 속도 (200ms = 0.2초)
     let fireRate = 200;
-
-    let startTime = 0;
-    let nextSpawnTime = 0;
+    let spreadLevel = 1;
+    let survivedTimeMs = 0;
+    let nextSpawnTime = 1500;
     let spawnDelay = 1500;
 
     window.onload = async function() {
@@ -69,10 +121,9 @@
         g.fillStyle(0xff0000); g.fillRect(0, 0, 30, 30); g.generateTexture('enemy', 30, 30); g.clear();
         g.fillStyle(0x00ffff); g.fillCircle(10, 10, 10); g.generateTexture('tear', 20, 20); g.clear();
         g.fillStyle(0x800080); g.fillRect(0, 0, 60, 60); g.generateTexture('boss', 60, 60); g.clear();
-
-        // 아이템 텍스처
-        g.fillStyle(0xff66cc); g.fillCircle(10, 10, 10); g.generateTexture('potion', 20, 20); g.clear(); // 체력 회복(분홍 동그라미)
-        g.fillStyle(0xffff00); g.fillRect(0, 0, 20, 20); g.generateTexture('speedUp', 20, 20); g.clear(); // 공속 강화(노란 네모)
+        g.fillStyle(0xff66cc); g.fillCircle(10, 10, 10); g.generateTexture('potion', 20, 20); g.clear();
+        g.fillStyle(0xffff00); g.fillRect(0, 0, 20, 20); g.generateTexture('speedUp', 20, 20); g.clear();
+        g.fillStyle(0x0088ff); g.fillTriangle(0, 20, 10, 0, 20, 20); g.generateTexture('spreadUp', 20, 20); g.clear();
     }
 
     function create() {
@@ -89,15 +140,17 @@
 
         this.physics.add.overlap(tears, enemies, hitEnemy, null, this);
         this.physics.add.collider(player, enemies, hitPlayer, null, this);
-        // 💡 [수정] getPotion 대신 공용 getItem 함수로 변경
         this.physics.add.overlap(player, items, getItem, null, this);
 
-        startTime = this.time.now;
-        nextSpawnTime = startTime + spawnDelay;
+        let pauseText = this.add.text(400, 300, '⏸️ PAUSED', { fontSize: '64px', fill: '#ffff44', fontStyle: 'bold' }).setOrigin(0.5);
+        pauseText.setVisible(false);
+        this.game.events.on('hidden', () => { pauseText.setVisible(true); });
+        this.game.events.on('visible', () => { pauseText.setVisible(false); });
     }
 
     function update(time, delta) {
         if (isGameOver) return;
+        survivedTimeMs += delta;
 
         player.setVelocity(0);
         if (wasd.left.isDown) player.setVelocityX(-250);
@@ -106,22 +159,30 @@
         else if (wasd.down.isDown) player.setVelocityY(250);
 
         let pointer = this.input.activePointer;
-        if (time > lastFired) {
-            let angle = Phaser.Math.Angle.Between(player.x, player.y, pointer.x, pointer.y);
-            let tear = tears.create(player.x, player.y, 'tear');
-            tear.setVelocity(Math.cos(angle) * 400, Math.sin(angle) * 400);
-            this.time.delayedCall(1500, () => { if (tear.active) tear.destroy(); });
+        if (survivedTimeMs > lastFired) {
+            let baseAngle = Phaser.Math.Angle.Between(player.x, player.y, pointer.x, pointer.y);
 
-            // 💡 [핵심] 고정된 200이 아니라 변수 fireRate 사용!
-            lastFired = time + fireRate;
+            for (let i = 0; i < spreadLevel; i++) {
+                let offset = (i - (spreadLevel - 1) / 2) * 0.2;
+                let angle = baseAngle + offset;
+
+                let tear = tears.create(player.x, player.y, 'tear');
+                tear.setVelocity(Math.cos(angle) * 400, Math.sin(angle) * 400);
+                this.time.delayedCall(1500, () => { if (tear.active) tear.destroy(); });
+            }
+
+            // 💡 [사운드 재생] 총을 쏠 때마다 뾱! 소리 재생
+            playSound('shoot');
+
+            lastFired = survivedTimeMs + fireRate;
         }
 
-        let elapsedSeconds = (time - startTime) / 1000;
+        let elapsedSeconds = survivedTimeMs / 1000;
 
-        if (time > nextSpawnTime) {
+        if (survivedTimeMs > nextSpawnTime) {
             spawnEnemy();
             spawnDelay = Math.max(200, 1500 - (elapsedSeconds * 130));
-            nextSpawnTime = time + spawnDelay;
+            nextSpawnTime = survivedTimeMs + spawnDelay;
         }
 
         enemies.getChildren().forEach(enemy => {
@@ -153,13 +214,16 @@
             score += enemy.isBoss ? 5 : 1;
             document.getElementById('score').innerText = score;
 
-            // 💡 [아이템 드롭 확률 조정]
-            // 15% 확률로 포션, 10% 확률로 공속 강화 아이템 드롭
+            // 💡 [사운드 재생] 적이 죽을 때 펑! 소리 재생
+            playSound('hit');
+
             let dropChance = Phaser.Math.Between(1, 100);
-            if (dropChance <= 15) {
+            if (dropChance <= 10) {
                 items.create(enemy.x, enemy.y, 'potion');
+            } else if (dropChance <= 20) {
+                items.create(enemy.x, enemy.y, 'speedUp');
             } else if (dropChance <= 25) {
-                items.create(enemy.x, enemy.y, 'speedUp'); // 공속 강화 아이템!
+                items.create(enemy.x, enemy.y, 'spreadUp');
             }
         } else {
             enemy.setTintFill(0xffffff);
@@ -169,21 +233,25 @@
         }
     }
 
-    // 💡 [신규] 아이템 획득 로직 통합
     function getItem(player, item) {
-        let itemType = item.texture.key; // 어떤 아이템인지 확인
-        item.destroy(); // 화면에서 아이템 삭제
+        let itemType = item.texture.key;
+        item.destroy();
+
+        // 💡 [사운드 재생] 아이템 먹을 때 띠리링~ 소리 재생
+        playSound('item');
 
         if (itemType === 'potion') {
-            // 체력 20 회복 (최대 100)
             hp = Math.min(hp + 20, 100);
             document.getElementById('hp').innerText = hp;
-            this.cameras.main.flash(200, 0, 255, 0); // 초록색 번쩍임
+            this.cameras.main.flash(200, 0, 255, 0);
         }
         else if (itemType === 'speedUp') {
-            // 💡 연사 속도 20ms 감소 (최대 50ms까지만 빨라지도록 제한)
             fireRate = Math.max(50, fireRate - 20);
-            this.cameras.main.flash(200, 255, 255, 0); // 노란색 번쩍임 (파워업 효과)
+            this.cameras.main.flash(200, 255, 255, 0);
+        }
+        else if (itemType === 'spreadUp') {
+            spreadLevel = Math.min(spreadLevel + 2, 5);
+            this.cameras.main.flash(200, 0, 136, 255);
         }
     }
 
@@ -192,9 +260,12 @@
         let knockbackY = (player.y - enemy.y) * 3;
         player.setVelocity(knockbackX, knockbackY);
 
-        let damage = enemy.isBoss ? 20 : 10;
+        let damage = enemy.isBoss ? 20 : 5;
         hp -= damage;
         document.getElementById('hp').innerText = Math.max(hp, 0);
+
+        // 💡 [사운드 재생] 맞았을 때 윽! 소리 재생
+        playSound('damage');
 
         this.cameras.main.flash(200, 255, 0, 0);
         this.cameras.main.shake(150, 0.02);
@@ -204,7 +275,7 @@
             this.physics.pause();
             player.setTint(0xff0000);
 
-            let survivedSeconds = Math.floor((this.time.now - startTime) / 1000);
+            let survivedSeconds = Math.floor(survivedTimeMs / 1000);
             handleGameOver(score, survivedSeconds);
         }
     }
@@ -223,8 +294,8 @@
         else if (survivedSeconds < 25) msg = `[⏱️ ${survivedSeconds}초 생존] 20초 돌파! 진정한 생존의 의미를 깨달으셨군요.`;
         else if (survivedSeconds < 30) msg = `[⏱️ ${survivedSeconds}초 생존] 피지컬이 예사롭지 않습니다. 지하실의 중간 보스급이네요!`;
         else if (survivedSeconds < 35) msg = `[⏱️ ${survivedSeconds}초 생존] 30초의 벽을 넘다니... 당신의 동체 시력에 경의를 표합니다.`;
-        else if (survivedSeconds < 40) msg = `[⏱️ ${survivedSeconds}초 생존] 고인물의 냄새가 납니다. 혹시 뱀파이어 서바이버 장인이신가요?`;
-        else if (survivedSeconds < 45) msg = `[⏱️ ${survivedSeconds}초 생존] 몬스터 학살자 칭호를 획득하셨습니다. 혹시 AI 아니신가요? 🤖`;
+        else if (survivedSeconds < 40) msg = `[⏱️ ${survivedSeconds}초 생존] 고인물의 냄새가 납니다. 샷건 맛이 어떤가요?`;
+        else if (survivedSeconds < 45) msg = `[⏱️ ${survivedSeconds}초 생존] 몬스터 학살자 칭호를 획득하셨습니다. 화력의 끝을 보셨군요! 🚀`;
         else if (survivedSeconds < 50) msg = `[⏱️ ${survivedSeconds}초 생존] 전설로 남을 기록입니다! 50초가 코앞이었는데 정말 아깝네요!`;
         else msg = `[⏱️ ${survivedSeconds}초 생존] 🏆 신의 경지에 도달하셨습니다! 이 미친 난이도를 50초 이상 버티다니!`;
 
