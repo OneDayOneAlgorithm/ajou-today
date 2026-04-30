@@ -11,7 +11,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addViewControllers(ViewControllerRegistry registry) {
         // "/quote"로 들어오면 "quote.html"을 보여줘라!
         registry.addViewController("/quote").setViewName("forward:/quote.html");
-        registry.addViewController("/game").setViewName("forward:/game.html");
+        registry.addViewController("/survival").setViewName("forward:/survival.html");
         registry.addViewController("/admin").setViewName("forward:/admin.html");
     }
 }
