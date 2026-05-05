@@ -1,0 +1,99 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #111827;
+    color: white;
+}
+
+.container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 48px;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    color: #9ca3af;
+    margin-bottom: 24px;
+}
+
+button {
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    background: #3b82f6;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #2563eb;
+}
+
+.hidden {
+    display: none;
+}
+
+.game {
+    margin-top: 30px;
+}
+
+.status {
+    display: flex;
+    justify-content: space-between;
+    background: #1f2937;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.board {
+    display: grid;
+    gap: 20px;
+}
+
+.player, .log {
+    background: #1f2937;
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.field, .hand {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    min-height: 90px;
+}
+
+.card, .unit {
+    background: #374151;
+    border: 1px solid #4b5563;
+    border-radius: 12px;
+    width: 130px;
+    padding: 12px;
+}
+
+.card {
+    cursor: pointer;
+}
+
+.card:hover {
+    background: #4b5563;
+}
+
+.log ul {
+    list-style: none;
+    padding: 0;
+}
+
+.log li {
+    margin: 8px 0;
+    color: #d1d5db;
+}

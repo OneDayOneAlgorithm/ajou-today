@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Line Duel</title>
+    <link rel="stylesheet" href="/lineduel/style.css">
+</head>
+<body>
+<div class="container">
+    <h1>Line Duel</h1>
+    <p class="subtitle">누구나 바로 이해하는 1대1 카드 전투</p>
+
+    <button onclick="startGame()">게임 시작</button>
+
+    <div id="game" class="game hidden">
+        <div class="status">
+            <span id="turn"></span>
+            <span id="winner"></span>
+        </div>
+
+        <div class="board">
+            <section class="player enemy">
+                <h2>Player 2</h2>
+                <p>HP: <span id="p2Hp"></span> / Mana: <span id="p2Mana"></span></p>
+                <div id="p2Field" class="field"></div>
+                <h3>Player 2 손패</h3>
+                <div id="p2Hand" class="hand"></div>
+            </section>
+
+            <section class="log">
+                <h3>전투 로그</h3>
+                <ul id="logs"></ul>
+            </section>
+
+            <section class="player me">
+                <h2>Player 1</h2>
+                <p>HP: <span id="p1Hp"></span> / Mana: <span id="p1Mana"></span></p>
+                <div id="p1Field" class="field"></div>
+                <h3>Player 1 손패</h3>
+                <div id="p1Hand" class="hand"></div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script src="/lineduel/app.js"></script>
+</body>
+</html>
