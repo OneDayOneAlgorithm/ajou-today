@@ -286,3 +286,70 @@ button:hover {
 .enemy h2 {
     color: #fecaca;
 }
+
+.waiting-panel {
+    background: #1f2937;
+    border: 2px dashed #60a5fa;
+    border-radius: 18px;
+    padding: 28px;
+    margin-bottom: 20px;
+}
+
+.waiting-panel h2 {
+    margin-top: 0;
+    color: #bfdbfe;
+    font-size: 28px;
+}
+
+.waiting-panel p {
+    color: #d1d5db;
+    margin-bottom: 16px;
+}
+
+.big-room-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: #111827;
+    border-radius: 14px;
+    padding: 14px 18px;
+}
+
+.big-room-code span {
+    font-size: 32px;
+    font-weight: bold;
+    letter-spacing: 4px;
+    color: #facc15;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.danger-button {
+    background: #dc2626;
+}
+
+.danger-button:hover {
+    background: #b91c1c;
+}
+
+.reconnect-panel {
+    background: #1f2937;
+    border: 1px solid #60a5fa;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.reconnect-panel p {
+    margin-top: 0;
+    color: #d1d5db;
+}
+
+.reconnect-panel strong {
+    color: #facc15;
+}
