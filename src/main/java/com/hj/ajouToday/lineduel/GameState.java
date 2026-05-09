@@ -11,8 +11,10 @@ public class GameState {
     private String status;
     private String winner;
 
-    // 핵심: 이번 턴에 제출된 행동 저장
     private Map<Integer, Integer> pendingActions = new HashMap<>();
+
+    // 추가: playerNumber -> occupied 여부
+    private Map<Integer, Boolean> players = new HashMap<>();
 
     public GameState() {}
 
@@ -21,7 +23,10 @@ public class GameState {
         this.turn = 1;
         this.player1 = new PlayerState("Player 1");
         this.player2 = new PlayerState("Player 2");
-        this.status = "WAITING_ACTION";
+        this.status = "WAITING_PLAYER";
+
+        this.players.put(1, false);
+        this.players.put(2, false);
     }
 
     public String getGameId() { return gameId; }
@@ -31,6 +36,26 @@ public class GameState {
     public String getStatus() { return status; }
     public String getWinner() { return winner; }
     public Map<Integer, Integer> getPendingActions() { return pendingActions; }
+    public Map<Integer, Boolean> getPlayers() { return players; }
+
+    public int joinPlayer() {
+        if (!players.get(1)) {
+            players.put(1, true);
+            return 1;
+        }
+
+        if (!players.get(2)) {
+            players.put(2, true);
+            this.status = "WAITING_ACTION";
+            return 2;
+        }
+
+        throw new IllegalStateException("이미 방이 가득 찼습니다.");
+    }
+
+    public boolean isPlayerJoined(int playerNumber) {
+        return Boolean.TRUE.equals(players.get(playerNumber));
+    }
 
     public void submitAction(int playerNumber, int cardId) {
         this.pendingActions.put(playerNumber, cardId);

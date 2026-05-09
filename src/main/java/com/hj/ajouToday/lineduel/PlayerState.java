@@ -16,8 +16,8 @@ public class PlayerState {
     public PlayerState(String name) {
         this.name = name;
         this.hp = 20;
-        this.maxMana = 5;
-        this.mana = 5;
+        this.maxMana = 1;
+        this.mana = 1;
         this.hand.addAll(List.of(1, 2, 3, 4));
     }
 

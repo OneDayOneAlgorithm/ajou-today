@@ -1,5 +1,6 @@
 package com.hj.ajouToday.lineduel;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -9,9 +10,14 @@ import java.util.List;
 public class LineDuelController {
 
     private final LineDuelService service;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public LineDuelController(LineDuelService service) {
+    public LineDuelController(
+            LineDuelService service,
+            SimpMessagingTemplate messagingTemplate
+    ) {
         this.service = service;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @GetMapping("/cards")
@@ -20,8 +26,39 @@ public class LineDuelController {
     }
 
     @PostMapping("/games")
-    public GameState startGame() {
-        return service.startGame();
+    public RoomJoinViewResult startGame() {
+        RoomJoinResult result = service.startGame();
+
+        LineDuelViewState viewState = service.toViewState(
+                result.getState(),
+                result.getPlayerNumber()
+        );
+
+        return new RoomJoinViewResult(viewState, result.getPlayerNumber());
+    }
+
+    @PostMapping("/games/join")
+    public RoomJoinViewResult joinGame(@RequestBody RoomJoinRequest request) {
+        RoomJoinResult result = service.joinGame(request.getGameId());
+        GameState state = result.getState();
+
+        // Player 1 화면 즉시 갱신
+        messagingTemplate.convertAndSend(
+                "/topic/lineduel/" + state.getGameId() + "/player/1",
+                new TurnViewResult(
+                        service.toViewState(state, 1),
+                        List.of("Player 2가 입장했습니다. 게임을 시작할 수 있습니다."),
+                        false
+                )
+        );
+
+        // Player 2에게 반환할 화면 데이터
+        LineDuelViewState viewState = service.toViewState(
+                state,
+                result.getPlayerNumber()
+        );
+
+        return new RoomJoinViewResult(viewState, result.getPlayerNumber());
     }
 
     @GetMapping("/games/{gameId}")

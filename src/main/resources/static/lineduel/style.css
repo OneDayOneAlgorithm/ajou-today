@@ -97,3 +97,151 @@ button:hover {
     margin: 8px 0;
     color: #d1d5db;
 }
+
+.lobby {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.join-box {
+    display: flex;
+    gap: 8px;
+}
+
+.join-box input {
+    border: 1px solid #4b5563;
+    border-radius: 12px;
+    padding: 12px;
+    background: #1f2937;
+    color: white;
+    width: 280px;
+}
+
+.room-info {
+    background: #1f2937;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.room-info p {
+    margin: 6px 0;
+}
+
+.hidden-card {
+    background: #111827;
+    border: 1px dashed #6b7280;
+    opacity: 0.8;
+}
+
+.action-panel {
+    background: #1f2937;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.action-panel p {
+    margin: 0;
+    color: #e5e7eb;
+    font-weight: bold;
+}
+
+.action-panel button:disabled {
+    background: #4b5563;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.selected-card {
+    border: 2px solid #60a5fa;
+    background: #1d4ed8;
+    transform: translateY(-6px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+}
+
+.disabled-card {
+    opacity: 0.35;
+    filter: grayscale(0.7);
+    cursor: not-allowed;
+}
+
+.disabled-card:hover {
+    background: #374151;
+    transform: none;
+}
+
+.card-warning {
+    margin-top: 8px;
+    color: #fca5a5;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.card:not(.disabled-card):hover {
+    background: #4b5563;
+    transform: translateY(-4px);
+}
+
+.copy-button {
+    margin-left: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    background: #4b5563;
+}
+
+.copy-button:hover {
+    background: #6b7280;
+}
+
+.copy-message {
+    color: #93c5fd;
+    font-size: 14px;
+    min-height: 20px;
+}
+
+.result-panel {
+    background: #111827;
+    border: 2px solid #60a5fa;
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+}
+
+.result-panel h2 {
+    margin-top: 0;
+    font-size: 32px;
+    color: #bfdbfe;
+}
+
+.result-panel p {
+    color: #e5e7eb;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.result-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.secondary-button {
+    background: #4b5563;
+}
+
+.secondary-button:hover {
+    background: #6b7280;
+}

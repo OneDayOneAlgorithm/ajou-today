@@ -10,9 +10,43 @@
     <h1>Line Duel</h1>
     <p class="subtitle">누구나 바로 이해하는 1대1 카드 전투</p>
 
-    <button onclick="startGame()">게임 시작</button>
+    <div class="lobby">
+        <button onclick="createRoom()">방 만들기</button>
+
+        <div class="join-box">
+            <input id="joinGameId" placeholder="방 코드 입력 예: A8K2QF">
+            <button onclick="joinRoom()">방 입장</button>
+        </div>
+    </div>
+
+    <div id="roomInfo" class="room-info hidden">
+        <p>
+            방 코드:
+            <strong id="gameIdText"></strong>
+            <button class="copy-button" onclick="copyRoomCode()">복사</button>
+        </p>
+        <p>내 플레이어: <strong id="myPlayerText"></strong></p>
+        <p id="copyMessage" class="copy-message"></p>
+        <p id="waitingText"></p>
+    </div>
 
     <div id="game" class="game hidden">
+        <div id="resultPanel" class="result-panel hidden">
+            <h2 id="resultTitle">게임 종료</h2>
+            <p id="resultMessage"></p>
+            <div class="result-buttons">
+                <button onclick="createRoom()">새 게임 만들기</button>
+                <button class="secondary-button" onclick="goToLobby()">로비로 돌아가기</button>
+            </div>
+        </div>
+
+        <div class="action-panel">
+            <p id="selectedCardText">선택한 카드: 없음</p>
+            <button id="submitCardButton" onclick="submitSelectedCard()" disabled>
+                선택한 카드 제출
+            </button>
+        </div>
+
         <div class="status">
             <span id="turn"></span>
             <span id="winner"></span>

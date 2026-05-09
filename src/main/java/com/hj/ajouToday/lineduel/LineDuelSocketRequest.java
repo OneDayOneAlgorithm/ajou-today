@@ -9,11 +9,23 @@ public class LineDuelSocketRequest {
         return gameId;
     }
 
+    public void setGameId(String gameId) {
+        this.gameId = gameId;
+    }
+
     public int getPlayerNumber() {
         return playerNumber;
     }
 
+    public void setPlayerNumber(int playerNumber) {
+        this.playerNumber = playerNumber;
+    }
+
     public int getCardId() {
         return cardId;
+    }
+
+    public void setCardId(int cardId) {
+        this.cardId = cardId;
     }
 }

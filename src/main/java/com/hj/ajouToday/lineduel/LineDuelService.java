@@ -13,18 +13,55 @@ public class LineDuelService {
             1, new Card(1, "병사", 1, 2, 2, "기본 유닛"),
             2, new Card(2, "방패병", 2, 1, 5, "체력이 높다"),
             3, new Card(3, "광전사", 2, 4, 1, "공격력이 높다"),
-            4, new Card(4, "화염구", 3, 3, 0, "상대 영웅에게 3 피해")
+            4, new Card(4, "화염구", 3, 20, 0, "상대 영웅에게 20 피해")
     );
 
     public List<Card> getCards() {
         return new ArrayList<>(cards.values());
     }
 
-    public GameState startGame() {
-        String gameId = UUID.randomUUID().toString();
+    public RoomJoinResult startGame() {
+        String gameId = generateRoomCode();
+
         GameState state = new GameState(gameId);
+
+        int playerNumber = state.joinPlayer();
+
         games.put(gameId, state);
-        return state;
+
+        return new RoomJoinResult(state, playerNumber);
+    }
+
+    private String generateRoomCode() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        Random random = new Random();
+
+        while (true) {
+            StringBuilder code = new StringBuilder();
+
+            for (int i = 0; i < 6; i++) {
+                int index = random.nextInt(chars.length());
+                code.append(chars.charAt(index));
+            }
+
+            String roomCode = code.toString();
+
+            if (!games.containsKey(roomCode)) {
+                return roomCode;
+            }
+        }
+    }
+
+    public RoomJoinResult joinGame(String gameId) {
+        GameState state = getGame(gameId);
+
+        if ("FINISHED".equals(state.getStatus())) {
+            throw new IllegalStateException("이미 종료된 게임입니다.");
+        }
+
+        int playerNumber = state.joinPlayer();
+
+        return new RoomJoinResult(state, playerNumber);
     }
 
     public GameState getGame(String gameId) {
@@ -42,11 +79,19 @@ public class LineDuelService {
             throw new IllegalStateException("이미 종료된 게임입니다.");
         }
 
+        if ("WAITING_PLAYER".equals(state.getStatus())) {
+            throw new IllegalStateException("상대 플레이어를 기다리는 중입니다.");
+        }
+
         int playerNumber = request.getPlayerNumber();
         int cardId = request.getCardId();
 
         if (playerNumber != 1 && playerNumber != 2) {
             throw new IllegalArgumentException("잘못된 플레이어 번호입니다.");
+        }
+
+        if (!state.isPlayerJoined(playerNumber)) {
+            throw new IllegalStateException("입장하지 않은 플레이어입니다.");
         }
 
         PlayerState me = playerNumber == 1 ? state.getPlayer1() : state.getPlayer2();
@@ -74,12 +119,10 @@ public class LineDuelService {
         List<String> logs = new ArrayList<>();
         logs.add(me.getName() + "이(가) 행동을 제출했습니다.");
 
-        // 아직 한 명만 제출한 상태
         if (!state.bothSubmitted()) {
             return new TurnResult(state, logs, false);
         }
 
-        // 둘 다 제출했으면 턴 판정
         logs.add("양쪽 플레이어가 모두 행동을 제출했습니다.");
         resolveSubmittedTurn(state, logs);
 
@@ -168,5 +211,46 @@ public class LineDuelService {
         } else {
             state.nextTurn();
         }
+    }
+
+    public LineDuelViewState toViewState(GameState state, int viewerPlayerNumber) {
+        PlayerViewState player1View = toPlayerView(
+                state.getPlayer1(),
+                viewerPlayerNumber == 1
+        );
+
+        PlayerViewState player2View = toPlayerView(
+                state.getPlayer2(),
+                viewerPlayerNumber == 2
+        );
+
+        return new LineDuelViewState(
+                state.getGameId(),
+                state.getTurn(),
+                player1View,
+                player2View,
+                state.getStatus(),
+                state.getWinner(),
+                state.getPendingActions(),
+                state.getPlayers(),
+                viewerPlayerNumber
+        );
+    }
+
+    private PlayerViewState toPlayerView(PlayerState player, boolean handVisible) {
+        List<Integer> visibleHand = handVisible
+                ? new ArrayList<>(player.getHand())
+                : List.of();
+
+        return new PlayerViewState(
+                player.getName(),
+                player.getHp(),
+                player.getMana(),
+                player.getMaxMana(),
+                visibleHand,
+                player.getHand().size(),
+                new ArrayList<>(player.getField()),
+                handVisible
+        );
     }
 }
