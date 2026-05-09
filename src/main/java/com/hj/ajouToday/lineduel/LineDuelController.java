@@ -47,7 +47,7 @@ public class LineDuelController {
                 "/topic/lineduel/" + state.getGameId() + "/player/1",
                 new TurnViewResult(
                         service.toViewState(state, 1),
-                        List.of("Player 2가 입장했습니다. 게임을 시작할 수 있습니다."),
+                        state.getLogs(),
                         false
                 )
         );

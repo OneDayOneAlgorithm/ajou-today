@@ -1,6 +1,8 @@
 package com.hj.ajouToday.lineduel;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class GameState {
@@ -12,9 +14,8 @@ public class GameState {
     private String winner;
 
     private Map<Integer, Integer> pendingActions = new HashMap<>();
-
-    // 추가: playerNumber -> occupied 여부
     private Map<Integer, Boolean> players = new HashMap<>();
+    private List<String> logs = new ArrayList<>();
 
     public GameState() {}
 
@@ -37,6 +38,17 @@ public class GameState {
     public String getWinner() { return winner; }
     public Map<Integer, Integer> getPendingActions() { return pendingActions; }
     public Map<Integer, Boolean> getPlayers() { return players; }
+    public List<String> getLogs() {
+        return logs;
+    }
+
+    public void addLog(String log) {
+        this.logs.add(log);
+    }
+
+    public void addLogs(List<String> logs) {
+        this.logs.addAll(logs);
+    }
 
     public int joinPlayer() {
         if (!players.get(1)) {

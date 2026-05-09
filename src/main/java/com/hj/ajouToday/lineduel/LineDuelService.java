@@ -27,6 +27,10 @@ public class LineDuelService {
 
         int playerNumber = state.joinPlayer();
 
+        state.addLog("방이 생성되었습니다.");
+        state.addLog("Player 1이 입장했습니다.");
+        state.addLog("Player 2를 기다리는 중입니다.");
+
         games.put(gameId, state);
 
         return new RoomJoinResult(state, playerNumber);
@@ -60,6 +64,12 @@ public class LineDuelService {
         }
 
         int playerNumber = state.joinPlayer();
+
+        state.addLog("Player " + playerNumber + "이 입장했습니다.");
+
+        if ("WAITING_ACTION".equals(state.getStatus())) {
+            state.addLog("양쪽 플레이어가 모두 입장했습니다. 게임을 시작할 수 있습니다.");
+        }
 
         return new RoomJoinResult(state, playerNumber);
     }
@@ -116,17 +126,21 @@ public class LineDuelService {
 
         state.submitAction(playerNumber, cardId);
 
-        List<String> logs = new ArrayList<>();
-        logs.add(me.getName() + "이(가) 행동을 제출했습니다.");
+        List<String> newLogs = new ArrayList<>();
+        newLogs.add("Turn " + state.getTurn() + " - " + me.getName() + "이(가) 행동을 제출했습니다.");
 
         if (!state.bothSubmitted()) {
-            return new TurnResult(state, logs, false);
+            state.addLogs(newLogs);
+            return new TurnResult(state, new ArrayList<>(state.getLogs()), false);
         }
 
-        logs.add("양쪽 플레이어가 모두 행동을 제출했습니다.");
-        resolveSubmittedTurn(state, logs);
+        newLogs.add("Turn " + state.getTurn() + " - 양쪽 플레이어가 모두 행동을 제출했습니다.");
 
-        return new TurnResult(state, logs, true);
+        resolveSubmittedTurn(state, newLogs);
+
+        state.addLogs(newLogs);
+
+        return new TurnResult(state, new ArrayList<>(state.getLogs()), true);
     }
 
     private void applyCard(

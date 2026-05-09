@@ -91,11 +91,20 @@ button:hover {
 .log ul {
     list-style: none;
     padding: 0;
+    margin: 0;
+    max-height: 260px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
 }
 
 .log li {
     margin: 8px 0;
     color: #d1d5db;
+    text-align: left;
+    background: #111827;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 14px;
 }
 
 .lobby {
@@ -244,4 +253,20 @@ button:hover {
 
 .secondary-button:hover {
     background: #6b7280;
+}
+
+.damage-log {
+    border-left: 4px solid #f87171;
+}
+
+.summon-log {
+    border-left: 4px solid #60a5fa;
+}
+
+.system-log {
+    border-left: 4px solid #9ca3af;
+}
+
+.finish-log {
+    border-left: 4px solid #facc15;
 }
