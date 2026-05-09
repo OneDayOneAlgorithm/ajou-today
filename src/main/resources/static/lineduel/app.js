@@ -30,7 +30,7 @@ async function createRoom() {
 
     showRoomInfo();
     connectSocket(gameId);
-    render(currentState, ["방을 만들었습니다. 상대 플레이어를 기다리는 중입니다."]);
+    render(currentState, currentState.logs || []);
 }
 
 async function joinRoom() {
@@ -73,7 +73,7 @@ async function joinRoom() {
 
     showRoomInfo();
     connectSocket(gameId);
-    render(currentState, ["방에 입장했습니다."]);
+    render(currentState, currentState.logs || []);
 }
 
 async function loadCards() {
@@ -295,6 +295,8 @@ function updateSelectedCardPanel() {
 }
 
 function render(state, logs) {
+    logs = logs || [];
+
     currentState = state;
 
     document.getElementById("turn").innerText = `Turn ${state.turn}`;
@@ -332,7 +334,10 @@ function renderPendingStatus(state) {
 
     const li = document.createElement("li");
     li.innerText = `Player 1: ${p1Ready} / Player 2: ${p2Ready}`;
+    li.classList.add("system-log");
     logs.appendChild(li);
+
+    scrollLogsToBottom();
 }
 
 function renderPlayer(prefix, player) {
@@ -426,8 +431,21 @@ function renderLogs(logs) {
     logs.forEach(log => {
         const li = document.createElement("li");
         li.innerText = log;
+
+        if (log.includes("피해")) {
+            li.classList.add("damage-log");
+        } else if (log.includes("소환")) {
+            li.classList.add("summon-log");
+        } else if (log.includes("입장") || log.includes("생성")) {
+            li.classList.add("system-log");
+        } else if (log.includes("승리") || log.includes("종료")) {
+            li.classList.add("finish-log");
+        }
+
         ul.appendChild(li);
     });
+
+    scrollLogsToBottom();
 }
 
 function getCurrentLogTexts() {
@@ -554,4 +572,14 @@ function hideResultPanel() {
     }
 
     panel.classList.add("hidden");
+}
+
+function scrollLogsToBottom() {
+    const ul = document.getElementById("logs");
+
+    if (!ul) {
+        return;
+    }
+
+    ul.scrollTop = ul.scrollHeight;
 }
