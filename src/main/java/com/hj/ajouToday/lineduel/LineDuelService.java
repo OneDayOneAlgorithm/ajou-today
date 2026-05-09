@@ -2,26 +2,31 @@ package com.hj.ajouToday.lineduel;
 
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class LineDuelService {
 
-    private final Map<String, GameState> games = new ConcurrentHashMap<>();
-
     private static final long ROOM_EXPIRE_MILLIS = 1000L * 60 * 60;
-    //private static final long ROOM_EXPIRE_MILLIS = 1000L * 60;
 
-    private final Map<Integer, Card> cards = Map.of(
-            1, new Card(1, "병사", 1, 2, 2, "기본 유닛"),
-            2, new Card(2, "방패병", 2, 1, 5, "체력이 높다"),
-            3, new Card(3, "광전사", 2, 4, 1, "공격력이 높다"),
-            4, new Card(4, "화염구", 3, 20, 0, "상대 영웅에게 20 피해")
-    );
+    private final Map<String, GameState> games = new ConcurrentHashMap<>();
+    private final CardCatalog cardCatalog;
+    private final LineDuelMatchRepository matchRepository;
+
+    public LineDuelService(
+            CardCatalog cardCatalog,
+            LineDuelMatchRepository matchRepository
+    ) {
+        this.cardCatalog = cardCatalog;
+        this.matchRepository = matchRepository;
+    }
 
     public List<Card> getCards() {
-        return new ArrayList<>(cards.values());
+        return cardCatalog.getAllCards();
     }
 
     public RoomJoinResult startGame() {
@@ -37,6 +42,9 @@ public class LineDuelService {
         state.addLog("Player 2를 기다리는 중입니다.");
 
         games.put(gameId, state);
+
+        LineDuelMatch match = new LineDuelMatch(gameId);
+        matchRepository.save(match);
 
         return new RoomJoinResult(state, playerNumber);
     }
@@ -136,7 +144,7 @@ public class LineDuelService {
 
         PlayerState me = playerNumber == 1 ? state.getPlayer1() : state.getPlayer2();
 
-        Card card = cards.get(cardId);
+        Card card = cardCatalog.getCard(cardId);
 
         if (card == null) {
             throw new IllegalArgumentException("존재하지 않는 카드입니다.");
@@ -206,6 +214,13 @@ public class LineDuelService {
         newLogs.add(loserName + "이(가) 항복했습니다.");
         newLogs.add(winnerName + "이(가) 승리했습니다.");
 
+        saveMatchResult(
+                state,
+                winnerName,
+                loserName,
+                "SURRENDER"
+        );
+
         state.addLogs(newLogs);
 
         return new TurnResult(state, new ArrayList<>(state.getLogs()), true);
@@ -259,21 +274,19 @@ public class LineDuelService {
     }
 
     private void drawAndMana(GameState state) {
-        Random random = new Random();
-
         state.getPlayer1().increaseMana();
         state.getPlayer2().increaseMana();
 
-        state.getPlayer1().drawCard(random.nextInt(4) + 1);
-        state.getPlayer2().drawCard(random.nextInt(4) + 1);
+        state.getPlayer1().drawCard(cardCatalog.getRandomCardId());
+        state.getPlayer2().drawCard(cardCatalog.getRandomCardId());
     }
 
     private void resolveSubmittedTurn(GameState state, List<String> logs) {
         int p1CardId = state.getPendingActions().get(1);
         int p2CardId = state.getPendingActions().get(2);
 
-        Card p1Card = cards.get(p1CardId);
-        Card p2Card = cards.get(p2CardId);
+        Card p1Card = cardCatalog.getCard(p1CardId);
+        Card p2Card = cardCatalog.getCard(p2CardId);
 
         applyCard(state, state.getPlayer1(), state.getPlayer2(), p1Card, logs);
         applyCard(state, state.getPlayer2(), state.getPlayer1(), p2Card, logs);
@@ -286,10 +299,37 @@ public class LineDuelService {
 
         if (state.getPlayer1().getHp() <= 0 && state.getPlayer2().getHp() <= 0) {
             state.finish("DRAW");
+            logs.add("게임이 무승부로 종료되었습니다.");
+
+            saveMatchResult(
+                    state,
+                    "DRAW",
+                    "DRAW",
+                    "HP_ZERO"
+            );
+
         } else if (state.getPlayer1().getHp() <= 0) {
             state.finish("Player 2");
+            logs.add("Player 2이(가) 승리했습니다.");
+
+            saveMatchResult(
+                    state,
+                    "Player 2",
+                    "Player 1",
+                    "HP_ZERO"
+            );
+
         } else if (state.getPlayer2().getHp() <= 0) {
             state.finish("Player 1");
+            logs.add("Player 1이(가) 승리했습니다.");
+
+            saveMatchResult(
+                    state,
+                    "Player 1",
+                    "Player 2",
+                    "HP_ZERO"
+            );
+
         } else {
             state.nextTurn();
         }
@@ -353,5 +393,32 @@ public class LineDuelService {
 
     public int getActiveRoomCount() {
         return games.size();
+    }
+
+    private void saveMatchResult(GameState state, String winner, String loser, String endReason) {
+        LineDuelMatch match = matchRepository.findByGameId(state.getGameId())
+                .orElseThrow(() -> new IllegalStateException("매치 기록을 찾을 수 없습니다."));
+
+        if ("FINISHED".equals(match.getStatus())) {
+            return;
+        }
+
+        match.finish(
+                winner,
+                loser,
+                endReason,
+                state.getTurn()
+        );
+
+        matchRepository.save(match);
+    }
+
+    public List<LineDuelMatch> getMatches() {
+        return matchRepository.findAll();
+    }
+
+    public LineDuelMatch getMatch(String gameId) {
+        return matchRepository.findByGameId(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("매치 기록을 찾을 수 없습니다."));
     }
 }

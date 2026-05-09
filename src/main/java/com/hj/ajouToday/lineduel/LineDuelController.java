@@ -100,4 +100,14 @@ public class LineDuelController {
     public int cleanupRooms() {
         return service.cleanupExpiredRooms();
     }
+
+    @GetMapping("/matches")
+    public List<LineDuelMatch> getMatches() {
+        return service.getMatches();
+    }
+
+    @GetMapping("/matches/{gameId}")
+    public LineDuelMatch getMatch(@PathVariable String gameId) {
+        return service.getMatch(gameId);
+    }
 }
