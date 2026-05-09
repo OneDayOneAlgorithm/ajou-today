@@ -3,11 +3,15 @@ package com.hj.ajouToday.lineduel;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class LineDuelService {
 
-    private final Map<String, GameState> games = new HashMap<>();
+    private final Map<String, GameState> games = new ConcurrentHashMap<>();
+
+    private static final long ROOM_EXPIRE_MILLIS = 1000L * 60 * 60;
+    //private static final long ROOM_EXPIRE_MILLIS = 1000L * 60;
 
     private final Map<Integer, Card> cards = Map.of(
             1, new Card(1, "병사", 1, 2, 2, "기본 유닛"),
@@ -27,6 +31,7 @@ public class LineDuelService {
 
         int playerNumber = state.joinPlayer();
 
+        state.touch();
         state.addLog("방이 생성되었습니다.");
         state.addLog("Player 1이 입장했습니다.");
         state.addLog("Player 2를 기다리는 중입니다.");
@@ -65,6 +70,7 @@ public class LineDuelService {
 
         int playerNumber = state.joinPlayer();
 
+        state.touch();
         state.addLog("Player " + playerNumber + "이 입장했습니다.");
 
         if ("WAITING_ACTION".equals(state.getStatus())) {
@@ -85,6 +91,7 @@ public class LineDuelService {
             throw new IllegalStateException("해당 플레이어는 이 방에 입장한 기록이 없습니다.");
         }
 
+        state.touch();
         state.addLog("Player " + playerNumber + "이(가) 재접속했습니다.");
 
         return new RoomJoinResult(state, playerNumber);
@@ -92,9 +99,16 @@ public class LineDuelService {
 
     public GameState getGame(String gameId) {
         GameState state = games.get(gameId);
+
         if (state == null) {
             throw new IllegalArgumentException("존재하지 않는 게임입니다.");
         }
+
+        if (isExpired(state)) {
+            games.remove(gameId);
+            throw new IllegalStateException("만료된 게임방입니다.");
+        }
+
         return state;
     }
 
@@ -141,6 +155,7 @@ public class LineDuelService {
         }
 
         state.submitAction(playerNumber, cardId);
+        state.touch();
 
         List<String> newLogs = new ArrayList<>();
         newLogs.add("Turn " + state.getTurn() + " - " + me.getName() + "이(가) 행동을 제출했습니다.");
@@ -185,6 +200,7 @@ public class LineDuelService {
 
         state.clearActions();
         state.finish(winnerName);
+        state.touch();
 
         List<String> newLogs = new ArrayList<>();
         newLogs.add(loserName + "이(가) 항복했습니다.");
@@ -318,5 +334,24 @@ public class LineDuelService {
                 new ArrayList<>(player.getField()),
                 handVisible
         );
+    }
+
+    private boolean isExpired(GameState state) {
+        long now = System.currentTimeMillis();
+        return now - state.getLastActiveAt() > ROOM_EXPIRE_MILLIS;
+    }
+
+    public int cleanupExpiredRooms() {
+        int before = games.size();
+
+        games.entrySet().removeIf(entry -> isExpired(entry.getValue()));
+
+        int after = games.size();
+
+        return before - after;
+    }
+
+    public int getActiveRoomCount() {
+        return games.size();
     }
 }
