@@ -311,16 +311,32 @@ function render(state, logs) {
         waitingText.innerText = "";
     }
 
-    renderPlayer("p1", state.player1);
-    renderPlayer("p2", state.player2);
-
-    renderHand("p1Hand", 1, state.player1, state);
-    renderHand("p2Hand", 2, state.player2, state);
+    renderPerspectiveBoard(state);
 
     renderLogs(logs);
     renderPendingStatus(state);
     updateSelectedCardPanel();
     updateResultPanel(state);
+}
+
+function renderPerspectiveBoard(state) {
+    const myNumber = myPlayerNumber;
+    const enemyNumber = myNumber === 1 ? 2 : 1;
+
+    const myPlayer = myNumber === 1 ? state.player1 : state.player2;
+    const enemyPlayer = enemyNumber === 1 ? state.player1 : state.player2;
+
+    document.getElementById("meTitle").innerText = `나 - Player ${myNumber}`;
+    document.getElementById("enemyTitle").innerText = `상대 - Player ${enemyNumber}`;
+
+    document.getElementById("meHandTitle").innerText = `내 손패`;
+    document.getElementById("enemyHandTitle").innerText = `상대 손패`;
+
+    renderPlayerToElements("me", myPlayer);
+    renderPlayerToElements("enemy", enemyPlayer);
+
+    renderHand("meHand", myNumber, myPlayer, state);
+    renderHand("enemyHand", enemyNumber, enemyPlayer, state);
 }
 
 function renderPendingStatus(state) {
@@ -340,7 +356,7 @@ function renderPendingStatus(state) {
     scrollLogsToBottom();
 }
 
-function renderPlayer(prefix, player) {
+function renderPlayerToElements(prefix, player) {
     document.getElementById(`${prefix}Hp`).innerText = player.hp;
     document.getElementById(`${prefix}Mana`).innerText = player.mana;
 

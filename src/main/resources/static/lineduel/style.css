@@ -270,3 +270,19 @@ button:hover {
 .finish-log {
     border-left: 4px solid #facc15;
 }
+
+.me {
+    border: 1px solid #60a5fa;
+}
+
+.enemy {
+    border: 1px solid #f87171;
+}
+
+.me h2 {
+    color: #bfdbfe;
+}
+
+.enemy h2 {
+    color: #fecaca;
+}

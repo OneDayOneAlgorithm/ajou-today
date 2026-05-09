@@ -54,11 +54,14 @@
 
         <div class="board">
             <section class="player enemy">
-                <h2>Player 2</h2>
-                <p>HP: <span id="p2Hp"></span> / Mana: <span id="p2Mana"></span></p>
-                <div id="p2Field" class="field"></div>
-                <h3>Player 2 손패</h3>
-                <div id="p2Hand" class="hand"></div>
+                <h2 id="enemyTitle">상대</h2>
+                <p>
+                    HP: <span id="enemyHp"></span>
+                    / Mana: <span id="enemyMana"></span>
+                </p>
+                <div id="enemyField" class="field"></div>
+                <h3 id="enemyHandTitle">상대 손패</h3>
+                <div id="enemyHand" class="hand"></div>
             </section>
 
             <section class="log">
@@ -67,11 +70,14 @@
             </section>
 
             <section class="player me">
-                <h2>Player 1</h2>
-                <p>HP: <span id="p1Hp"></span> / Mana: <span id="p1Mana"></span></p>
-                <div id="p1Field" class="field"></div>
-                <h3>Player 1 손패</h3>
-                <div id="p1Hand" class="hand"></div>
+                <h2 id="meTitle">나</h2>
+                <p>
+                    HP: <span id="meHp"></span>
+                    / Mana: <span id="meMana"></span>
+                </p>
+                <div id="meField" class="field"></div>
+                <h3 id="meHandTitle">내 손패</h3>
+                <div id="meHand" class="hand"></div>
             </section>
         </div>
     </div>
