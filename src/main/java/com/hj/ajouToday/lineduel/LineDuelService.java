@@ -74,6 +74,22 @@ public class LineDuelService {
         return new RoomJoinResult(state, playerNumber);
     }
 
+    public RoomJoinResult reconnectGame(String gameId, int playerNumber) {
+        GameState state = getGame(gameId);
+
+        if (playerNumber != 1 && playerNumber != 2) {
+            throw new IllegalArgumentException("잘못된 플레이어 번호입니다.");
+        }
+
+        if (!state.isPlayerJoined(playerNumber)) {
+            throw new IllegalStateException("해당 플레이어는 이 방에 입장한 기록이 없습니다.");
+        }
+
+        state.addLog("Player " + playerNumber + "이(가) 재접속했습니다.");
+
+        return new RoomJoinResult(state, playerNumber);
+    }
+
     public GameState getGame(String gameId) {
         GameState state = games.get(gameId);
         if (state == null) {
@@ -137,6 +153,42 @@ public class LineDuelService {
         newLogs.add("Turn " + state.getTurn() + " - 양쪽 플레이어가 모두 행동을 제출했습니다.");
 
         resolveSubmittedTurn(state, newLogs);
+
+        state.addLogs(newLogs);
+
+        return new TurnResult(state, new ArrayList<>(state.getLogs()), true);
+    }
+
+    public TurnResult surrender(String gameId, int playerNumber) {
+        GameState state = getGame(gameId);
+
+        if ("FINISHED".equals(state.getStatus())) {
+            throw new IllegalStateException("이미 종료된 게임입니다.");
+        }
+
+        if (playerNumber != 1 && playerNumber != 2) {
+            throw new IllegalArgumentException("잘못된 플레이어 번호입니다.");
+        }
+
+        if (!state.isPlayerJoined(playerNumber)) {
+            throw new IllegalStateException("입장하지 않은 플레이어입니다.");
+        }
+
+        int winnerNumber = playerNumber == 1 ? 2 : 1;
+
+        if (!state.isPlayerJoined(winnerNumber)) {
+            throw new IllegalStateException("상대 플레이어가 아직 입장하지 않았습니다.");
+        }
+
+        String loserName = "Player " + playerNumber;
+        String winnerName = "Player " + winnerNumber;
+
+        state.clearActions();
+        state.finish(winnerName);
+
+        List<String> newLogs = new ArrayList<>();
+        newLogs.add(loserName + "이(가) 항복했습니다.");
+        newLogs.add(winnerName + "이(가) 승리했습니다.");
 
         state.addLogs(newLogs);
 

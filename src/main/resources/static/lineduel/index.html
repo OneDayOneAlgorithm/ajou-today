@@ -19,6 +19,15 @@
         </div>
     </div>
 
+    <div id="reconnectPanel" class="reconnect-panel hidden">
+        <p>
+            이전 게임이 있습니다:
+            <strong id="savedGameText"></strong>
+        </p>
+        <button onclick="reconnectGame()">이전 게임으로 재접속</button>
+        <button class="secondary-button" onclick="clearSavedGame()">기록 삭제</button>
+    </div>
+
     <div id="roomInfo" class="room-info hidden">
         <p>
             방 코드:
@@ -40,11 +49,27 @@
             </div>
         </div>
 
-        <div class="action-panel">
+        <div id="waitingPanel" class="waiting-panel hidden">
+            <h2>상대 플레이어를 기다리는 중...</h2>
+            <p>아래 방 코드를 친구에게 공유하세요.</p>
+            <div class="big-room-code">
+                <span id="waitingRoomCode"></span>
+                <button class="copy-button" onclick="copyRoomCode()">복사</button>
+            </div>
+        </div>
+
+        <div id="actionPanel" class="action-panel">
             <p id="selectedCardText">선택한 카드: 없음</p>
-            <button id="submitCardButton" onclick="submitSelectedCard()" disabled>
-                선택한 카드 제출
-            </button>
+
+            <div class="action-buttons">
+                <button id="submitCardButton" onclick="submitSelectedCard()" disabled>
+                    선택한 카드 제출
+                </button>
+
+                <button id="surrenderButton" class="danger-button" onclick="surrenderGame()">
+                    항복
+                </button>
+            </div>
         </div>
 
         <div class="status">

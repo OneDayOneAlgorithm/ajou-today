@@ -61,6 +61,23 @@ public class LineDuelController {
         return new RoomJoinViewResult(viewState, result.getPlayerNumber());
     }
 
+    @PostMapping("/games/reconnect")
+    public RoomJoinViewResult reconnectGame(@RequestBody ReconnectRequest request) {
+        RoomJoinResult result = service.reconnectGame(
+                request.getGameId(),
+                request.getPlayerNumber()
+        );
+
+        GameState state = result.getState();
+
+        LineDuelViewState viewState = service.toViewState(
+                state,
+                result.getPlayerNumber()
+        );
+
+        return new RoomJoinViewResult(viewState, result.getPlayerNumber());
+    }
+
     @GetMapping("/games/{gameId}")
     public GameState getGame(@PathVariable String gameId) {
         return service.getGame(gameId);

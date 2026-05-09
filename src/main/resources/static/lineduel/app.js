@@ -6,6 +6,9 @@ let myPlayerNumber = null;
 let selectedCardId = null;
 let selectedHandIndex = null;
 
+const SAVED_GAME_ID_KEY = "lineDuelGameId";
+const SAVED_PLAYER_NUMBER_KEY = "lineDuelPlayerNumber";
+
 async function createRoom() {
     await loadCards();
 
@@ -26,11 +29,13 @@ async function createRoom() {
     selectedCardId = null;
     selectedHandIndex = null;
 
+    saveCurrentGame();
     hideResultPanel();
 
     showRoomInfo();
     connectSocket(gameId);
     render(currentState, currentState.logs || []);
+    updateReconnectPanel();
 }
 
 async function joinRoom() {
@@ -69,11 +74,13 @@ async function joinRoom() {
     selectedCardId = null;
     selectedHandIndex = null;
 
+    saveCurrentGame();
     hideResultPanel();
 
     showRoomInfo();
     connectSocket(gameId);
     render(currentState, currentState.logs || []);
+    updateReconnectPanel();
 }
 
 async function loadCards() {
@@ -315,6 +322,7 @@ function render(state, logs) {
 
     renderLogs(logs);
     renderPendingStatus(state);
+    updateWaitingPanel(state);
     updateSelectedCardPanel();
     updateResultPanel(state);
 }
@@ -547,6 +555,24 @@ function goToLobby() {
     hideResultPanel();
     renderLogs([]);
     updateSelectedCardPanel();
+
+    const waitingPanel = document.getElementById("waitingPanel");
+    const actionPanel = document.getElementById("actionPanel");
+    const surrenderButton = document.getElementById("surrenderButton");
+
+    if (waitingPanel) {
+        waitingPanel.classList.add("hidden");
+    }
+
+    if (actionPanel) {
+        actionPanel.classList.add("hidden");
+    }
+
+    if (surrenderButton) {
+        surrenderButton.classList.add("hidden");
+    }
+
+    updateReconnectPanel();
 }
 
 function updateResultPanel(state) {
@@ -599,3 +625,189 @@ function scrollLogsToBottom() {
 
     ul.scrollTop = ul.scrollHeight;
 }
+
+function updateWaitingPanel(state) {
+    const waitingPanel = document.getElementById("waitingPanel");
+    const actionPanel = document.getElementById("actionPanel");
+    const waitingRoomCode = document.getElementById("waitingRoomCode");
+    const surrenderButton = document.getElementById("surrenderButton");
+
+    if (!waitingPanel || !actionPanel || !waitingRoomCode) {
+        return;
+    }
+
+    if (!state) {
+        waitingPanel.classList.add("hidden");
+        actionPanel.classList.add("hidden");
+
+        if (surrenderButton) {
+            surrenderButton.classList.add("hidden");
+        }
+
+        return;
+    }
+
+    if (state.status === "WAITING_PLAYER") {
+        waitingPanel.classList.remove("hidden");
+        actionPanel.classList.add("hidden");
+        waitingRoomCode.innerText = state.gameId;
+
+        if (surrenderButton) {
+            surrenderButton.classList.add("hidden");
+        }
+
+        return;
+    }
+
+    waitingPanel.classList.add("hidden");
+
+    if (state.status === "FINISHED") {
+        actionPanel.classList.add("hidden");
+
+        if (surrenderButton) {
+            surrenderButton.classList.add("hidden");
+        }
+    } else {
+        actionPanel.classList.remove("hidden");
+
+        if (surrenderButton) {
+            surrenderButton.classList.remove("hidden");
+        }
+    }
+}
+
+function surrenderGame() {
+    if (!currentState) {
+        alert("게임 상태를 불러오지 못했습니다.");
+        return;
+    }
+
+    if (currentState.status === "FINISHED") {
+        alert("이미 종료된 게임입니다.");
+        return;
+    }
+
+    if (currentState.status === "WAITING_PLAYER") {
+        alert("상대 플레이어가 아직 입장하지 않았습니다.");
+        return;
+    }
+
+    const confirmed = confirm("정말 항복하시겠습니까?");
+
+    if (!confirmed) {
+        return;
+    }
+
+    if (!stompClient || !stompClient.connected) {
+        alert("WebSocket 연결이 아직 완료되지 않았습니다.");
+        return;
+    }
+
+    stompClient.send("/app/lineduel/surrender", {}, JSON.stringify({
+        gameId: gameId,
+        playerNumber: myPlayerNumber
+    }));
+}
+
+function saveCurrentGame() {
+    if (!gameId || !myPlayerNumber) {
+        return;
+    }
+
+    localStorage.setItem(SAVED_GAME_ID_KEY, gameId);
+    localStorage.setItem(SAVED_PLAYER_NUMBER_KEY, String(myPlayerNumber));
+}
+
+function clearSavedGame() {
+    localStorage.removeItem(SAVED_GAME_ID_KEY);
+    localStorage.removeItem(SAVED_PLAYER_NUMBER_KEY);
+
+    updateReconnectPanel();
+}
+
+function getSavedGame() {
+    const savedGameId = localStorage.getItem(SAVED_GAME_ID_KEY);
+    const savedPlayerNumber = Number(localStorage.getItem(SAVED_PLAYER_NUMBER_KEY));
+
+    if (!savedGameId || !savedPlayerNumber) {
+        return null;
+    }
+
+    if (savedPlayerNumber !== 1 && savedPlayerNumber !== 2) {
+        return null;
+    }
+
+    return {
+        gameId: savedGameId,
+        playerNumber: savedPlayerNumber
+    };
+}
+
+function updateReconnectPanel() {
+    const panel = document.getElementById("reconnectPanel");
+    const savedGameText = document.getElementById("savedGameText");
+
+    if (!panel || !savedGameText) {
+        return;
+    }
+
+    const savedGame = getSavedGame();
+
+    if (!savedGame || gameId) {
+        panel.classList.add("hidden");
+        return;
+    }
+
+    savedGameText.innerText = `${savedGame.gameId} / Player ${savedGame.playerNumber}`;
+    panel.classList.remove("hidden");
+}
+
+async function reconnectGame() {
+    const savedGame = getSavedGame();
+
+    if (!savedGame) {
+        alert("저장된 게임 정보가 없습니다.");
+        return;
+    }
+
+    await loadCards();
+
+    const response = await fetch("/api/lineduel/games/reconnect", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            gameId: savedGame.gameId,
+            playerNumber: savedGame.playerNumber
+        })
+    });
+
+    if (!response.ok) {
+        const text = await response.text();
+        console.error(text);
+        alert("재접속에 실패했습니다. 저장된 게임 기록을 삭제합니다.");
+        clearSavedGame();
+        return;
+    }
+
+    const result = await response.json();
+
+    gameId = result.state.gameId;
+    currentState = result.state;
+    myPlayerNumber = result.playerNumber;
+    selectedCardId = null;
+    selectedHandIndex = null;
+
+    saveCurrentGame();
+    hideResultPanel();
+
+    showRoomInfo();
+    connectSocket(gameId);
+    render(currentState, currentState.logs || []);
+    updateReconnectPanel();
+}
+
+window.addEventListener("DOMContentLoaded", function () {
+    updateReconnectPanel();
+});

@@ -37,6 +37,27 @@ public class LineDuelSocketController {
         }
     }
 
+    @MessageMapping("/lineduel/surrender")
+    public void surrender(SurrenderRequest request) {
+        try {
+            TurnResult result = service.surrender(
+                    request.getGameId(),
+                    request.getPlayerNumber()
+            );
+
+            GameState state = result.getState();
+
+            sendToPlayer(state, 1, result);
+            sendToPlayer(state, 2, result);
+
+        } catch (Exception e) {
+            sendError(
+                    toSocketRequest(request),
+                    e.getMessage()
+            );
+        }
+    }
+
     private void sendToPlayer(GameState state, int playerNumber, TurnResult result) {
         if (!state.isPlayerJoined(playerNumber)) {
             return;
@@ -69,5 +90,17 @@ public class LineDuelSocketController {
                 "/topic/lineduel/" + request.getGameId() + "/player/" + playerNumber,
                 new LineDuelErrorResult(message == null ? "알 수 없는 오류가 발생했습니다." : message)
         );
+    }
+
+    private LineDuelSocketRequest toSocketRequest(SurrenderRequest request) {
+        if (request == null) {
+            return null;
+        }
+
+        LineDuelSocketRequest socketRequest = new LineDuelSocketRequest();
+        socketRequest.setGameId(request.getGameId());
+        socketRequest.setPlayerNumber(request.getPlayerNumber());
+        socketRequest.setCardId(0);
+        return socketRequest;
     }
 }
