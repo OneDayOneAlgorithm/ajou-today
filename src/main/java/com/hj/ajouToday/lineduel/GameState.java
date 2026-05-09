@@ -16,6 +16,7 @@ public class GameState {
     private Map<Integer, Integer> pendingActions = new HashMap<>();
     private Map<Integer, Boolean> players = new HashMap<>();
     private List<String> logs = new ArrayList<>();
+    private long lastActiveAt;
 
     public GameState() {}
 
@@ -28,6 +29,8 @@ public class GameState {
 
         this.players.put(1, false);
         this.players.put(2, false);
+
+        this.lastActiveAt = System.currentTimeMillis();
     }
 
     public String getGameId() { return gameId; }
@@ -40,6 +43,13 @@ public class GameState {
     public Map<Integer, Boolean> getPlayers() { return players; }
     public List<String> getLogs() {
         return logs;
+    }
+    public long getLastActiveAt() {
+        return lastActiveAt;
+    }
+
+    public void touch() {
+        this.lastActiveAt = System.currentTimeMillis();
     }
 
     public void addLog(String log) {

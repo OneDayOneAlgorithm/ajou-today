@@ -90,4 +90,14 @@ public class LineDuelController {
     ) {
         return service.playCard(gameId, request);
     }
+
+    @GetMapping("/rooms/count")
+    public int getRoomCount() {
+        return service.getActiveRoomCount();
+    }
+
+    @PostMapping("/rooms/cleanup")
+    public int cleanupRooms() {
+        return service.cleanupExpiredRooms();
+    }
 }
