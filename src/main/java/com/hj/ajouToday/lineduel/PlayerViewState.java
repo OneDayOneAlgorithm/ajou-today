@@ -5,6 +5,7 @@ import java.util.List;
 public class PlayerViewState {
     private String name;
     private int hp;
+    private int maxHp;
     private int mana;
     private int maxMana;
     private List<Integer> hand;
@@ -15,6 +16,7 @@ public class PlayerViewState {
     public PlayerViewState(
             String name,
             int hp,
+            int maxHp,
             int mana,
             int maxMana,
             List<Integer> hand,
@@ -24,6 +26,7 @@ public class PlayerViewState {
     ) {
         this.name = name;
         this.hp = hp;
+        this.maxHp = maxHp;
         this.mana = mana;
         this.maxMana = maxMana;
         this.hand = hand;
@@ -54,6 +57,10 @@ public class PlayerViewState {
 
     public int getHandCount() {
         return handCount;
+    }
+
+    public int getMaxHp() {
+        return maxHp;
     }
 
     public List<UnitState> getField() {

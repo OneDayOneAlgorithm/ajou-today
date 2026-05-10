@@ -6,8 +6,10 @@ import java.util.List;
 public class PlayerState {
     private String name;
     private int hp;
+    private int maxHp;
     private int mana;
     private int maxMana;
+
     private List<Integer> hand = new ArrayList<>();
     private List<UnitState> field = new ArrayList<>();
 
@@ -15,9 +17,10 @@ public class PlayerState {
 
     public PlayerState(String name) {
         this.name = name;
-        this.hp = 20;
-        this.maxMana = 1;
-        this.mana = 1;
+        this.maxHp = 20;
+        this.hp = this.maxHp;
+        this.maxMana = 5;
+        this.mana = 5;
         this.hand.addAll(List.of(1, 2, 3, 4));
     }
 
@@ -31,8 +34,12 @@ public class PlayerState {
         this.hp -= amount;
     }
 
-    public void healHp(int amount) {
-        this.hp += amount;
+    public int healHp(int amount) {
+        int beforeHp = this.hp;
+
+        this.hp = Math.min(this.maxHp, this.hp + amount);
+
+        return this.hp - beforeHp;
     }
 
     public void useMana(int cost) {
@@ -54,5 +61,9 @@ public class PlayerState {
 
     public int getMaxMana() {
         return maxMana;
+    }
+
+    public int getMaxHp() {
+        return maxHp;
     }
 }

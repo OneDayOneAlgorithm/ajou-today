@@ -268,10 +268,15 @@ public class LineDuelService {
         }
 
         if (card.spellEffectType() == SpellEffectType.HEAL_SELF) {
-            me.healHp(card.attack());
+            int healedAmount = me.healHp(card.attack());
 
-            logs.add(me.getName() + "이(가) " + card.name() + "으로 HP를 "
-                    + card.attack() + " 회복했습니다.");
+            if (healedAmount <= 0) {
+                logs.add(me.getName() + "이(가) " + card.name() + "을(를) 사용했지만 HP가 이미 최대입니다.");
+            } else {
+                logs.add(me.getName() + "이(가) " + card.name() + "으로 HP를 "
+                        + healedAmount + " 회복했습니다.");
+            }
+
             return;
         }
 
@@ -410,6 +415,7 @@ public class LineDuelService {
         return new PlayerViewState(
                 player.getName(),
                 player.getHp(),
+                player.getMaxHp(),
                 player.getMana(),
                 player.getMaxMana(),
                 visibleHand,

@@ -368,8 +368,8 @@ function renderPendingStatus(state) {
 }
 
 function renderPlayerToElements(prefix, player) {
-    document.getElementById(`${prefix}Hp`).innerText = player.hp;
-    document.getElementById(`${prefix}Mana`).innerText = player.mana;
+    document.getElementById(`${prefix}Hp`).innerText = `${player.hp} / ${player.maxHp}`;
+    document.getElementById(`${prefix}Mana`).innerText = `${player.mana} / ${player.maxMana}`;
 
     const field = document.getElementById(`${prefix}Field`);
     field.innerHTML = "";
