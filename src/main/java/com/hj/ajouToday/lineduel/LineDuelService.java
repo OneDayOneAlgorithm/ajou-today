@@ -158,6 +158,10 @@ public class LineDuelService {
             throw new IllegalArgumentException("마나가 부족합니다.");
         }
 
+        if (card.type() == CardType.UNIT && me.isFieldFull()) {
+            throw new IllegalStateException("필드가 가득 차서 유닛을 소환할 수 없습니다.");
+        }
+
         if (state.getPendingActions().containsKey(playerNumber)) {
             throw new IllegalStateException("이미 이번 턴 행동을 제출했습니다.");
         }
@@ -237,6 +241,12 @@ public class LineDuelService {
         me.removeCardFromHand(card.id());
 
         if (card.type() == CardType.UNIT) {
+            if (me.isFieldFull()) {
+                logs.add(me.getName() + "의 필드가 가득 차서 "
+                        + card.name() + "을(를) 소환하지 못했습니다.");
+                return;
+            }
+
             UnitState unit = new UnitState(card.name(), card.attack(), card.hp());
             me.getField().add(unit);
 
@@ -460,6 +470,7 @@ public class LineDuelService {
                 visibleHand,
                 player.getHand().size(),
                 new ArrayList<>(player.getField()),
+                player.getMaxFieldSize(),
                 handVisible
         );
     }

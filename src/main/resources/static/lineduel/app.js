@@ -191,6 +191,11 @@ function selectCard(playerNumber, cardId, handIndex) {
         return;
     }
 
+    if (cannotSummonUnit(myPlayer, card)) {
+        alert("필드가 가득 차서 유닛을 소환할 수 없습니다.");
+        return;
+    }
+
     selectedCardId = cardId;
     selectedHandIndex = handIndex;
 
@@ -230,6 +235,15 @@ function submitSelectedCard() {
 
     if (myPlayer.mana < card.cost) {
         alert("마나가 부족해서 제출할 수 없습니다.");
+        selectedCardId = null;
+        selectedHandIndex = null;
+        render(currentState, getCurrentLogTexts());
+        updateSelectedCardPanel();
+        return;
+    }
+
+    if (cannotSummonUnit(myPlayer, card)) {
+        alert("필드가 가득 차서 유닛을 소환할 수 없습니다.");
         selectedCardId = null;
         selectedHandIndex = null;
         render(currentState, getCurrentLogTexts());
@@ -296,6 +310,12 @@ function updateSelectedCardPanel() {
 
     if (myPlayer.mana < card.cost) {
         text.innerText = `선택한 카드: ${card.name} / ${getCardTypeText(card.type)} / 마나 부족`;
+        button.disabled = true;
+        return;
+    }
+
+    if (cannotSummonUnit(myPlayer, card)) {
+        text.innerText = `선택한 카드: ${card.name} / 필드 가득 참`;
         button.disabled = true;
         return;
     }
@@ -368,10 +388,26 @@ function renderPendingStatus(state) {
 }
 
 function renderPlayerToElements(prefix, player) {
-    document.getElementById(`${prefix}Hp`).innerText = `${player.hp} / ${player.maxHp}`;
-    document.getElementById(`${prefix}Mana`).innerText = `${player.mana} / ${player.maxMana}`;
-
+    const hpEl = document.getElementById(`${prefix}Hp`);
+    const manaEl = document.getElementById(`${prefix}Mana`);
+    const fieldCountEl = document.getElementById(`${prefix}FieldCount`);
     const field = document.getElementById(`${prefix}Field`);
+
+    if (!hpEl || !manaEl || !fieldCountEl || !field) {
+        console.error("플레이어 렌더링 DOM 요소가 없습니다:", {
+            prefix,
+            hpEl,
+            manaEl,
+            fieldCountEl,
+            field
+        });
+        return;
+    }
+
+    hpEl.innerText = `${player.hp} / ${player.maxHp}`;
+    manaEl.innerText = `${player.mana} / ${player.maxMana}`;
+    fieldCountEl.innerText = `${player.field.length} / ${player.maxFieldSize}`;
+
     field.innerHTML = "";
 
     player.field.forEach(unit => {
@@ -413,10 +449,13 @@ function renderHand(elementId, playerNumber, player, state) {
         if (!card) return;
 
         const canAfford = player.mana >= card.cost;
+        const fieldFullForUnit = cannotSummonUnit(player, card);
+
         const canSelect =
             state.status === "WAITING_ACTION" &&
             !alreadySubmitted &&
-            canAfford;
+            canAfford &&
+            !fieldFullForUnit;
 
         const div = document.createElement("div");
         div.className = "card";
@@ -425,7 +464,7 @@ function renderHand(elementId, playerNumber, player, state) {
             div.classList.add("selected-card");
         }
 
-        if (!canAfford) {
+        if (!canAfford || fieldFullForUnit) {
             div.classList.add("disabled-card");
         }
 
@@ -441,6 +480,7 @@ function renderHand(elementId, playerNumber, player, state) {
             <p>${getCardStatText(card)}</p>
             <small>${card.description}</small>
             ${!canAfford ? `<p class="card-warning">마나 부족</p>` : ""}
+            ${fieldFullForUnit ? `<p class="card-warning">필드 가득 참</p>` : ""}
         `;
 
         if (canSelect) {
@@ -1007,4 +1047,16 @@ function getSpellEffectText(effectType) {
     }
 
     return "";
+}
+
+function isFieldFull(player) {
+    if (!player || !player.field) {
+        return false;
+    }
+
+    return player.field.length >= player.maxFieldSize;
+}
+
+function cannotSummonUnit(player, card) {
+    return card.type === "UNIT" && isFieldFull(player);
 }

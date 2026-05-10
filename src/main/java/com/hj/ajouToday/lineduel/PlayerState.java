@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PlayerState {
+    public static final int MAX_FIELD_SIZE = 5;
+
     private String name;
     private int hp;
     private int maxHp;
@@ -65,5 +67,13 @@ public class PlayerState {
 
     public int getMaxHp() {
         return maxHp;
+    }
+
+    public boolean isFieldFull() {
+        return this.field.size() >= MAX_FIELD_SIZE;
+    }
+
+    public int getMaxFieldSize() {
+        return MAX_FIELD_SIZE;
     }
 }

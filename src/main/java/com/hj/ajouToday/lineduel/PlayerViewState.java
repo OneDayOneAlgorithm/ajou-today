@@ -11,6 +11,7 @@ public class PlayerViewState {
     private List<Integer> hand;
     private int handCount;
     private List<UnitState> field;
+    private int maxFieldSize;
     private boolean handVisible;
 
     public PlayerViewState(
@@ -22,6 +23,7 @@ public class PlayerViewState {
             List<Integer> hand,
             int handCount,
             List<UnitState> field,
+            int maxFieldSize,
             boolean handVisible
     ) {
         this.name = name;
@@ -32,6 +34,7 @@ public class PlayerViewState {
         this.hand = hand;
         this.handCount = handCount;
         this.field = field;
+        this.maxFieldSize = maxFieldSize;
         this.handVisible = handVisible;
     }
 
@@ -61,6 +64,10 @@ public class PlayerViewState {
 
     public int getMaxHp() {
         return maxHp;
+    }
+
+    public int getMaxFieldSize() {
+        return maxFieldSize;
     }
 
     public List<UnitState> getField() {
