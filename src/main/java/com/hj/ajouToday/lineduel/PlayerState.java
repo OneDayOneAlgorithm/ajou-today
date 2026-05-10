@@ -31,6 +31,10 @@ public class PlayerState {
         this.hp -= amount;
     }
 
+    public void healHp(int amount) {
+        this.hp += amount;
+    }
+
     public void useMana(int cost) {
         this.mana -= cost;
     }

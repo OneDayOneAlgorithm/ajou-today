@@ -245,6 +245,21 @@ public class LineDuelService {
         }
 
         if (card.type() == CardType.SPELL) {
+            applySpell(state, me, enemy, card, logs);
+            return;
+        }
+
+        throw new IllegalStateException("지원하지 않는 카드 타입입니다.");
+    }
+
+    private void applySpell(
+            GameState state,
+            PlayerState me,
+            PlayerState enemy,
+            Card card,
+            List<String> logs
+    ) {
+        if (card.spellEffectType() == SpellEffectType.DAMAGE_HERO) {
             enemy.reduceHp(card.attack());
 
             logs.add(me.getName() + "이(가) " + card.name() + "으로 상대 영웅에게 "
@@ -252,7 +267,27 @@ public class LineDuelService {
             return;
         }
 
-        throw new IllegalStateException("지원하지 않는 카드 타입입니다.");
+        if (card.spellEffectType() == SpellEffectType.HEAL_SELF) {
+            me.healHp(card.attack());
+
+            logs.add(me.getName() + "이(가) " + card.name() + "으로 HP를 "
+                    + card.attack() + " 회복했습니다.");
+            return;
+        }
+
+        if (card.spellEffectType() == SpellEffectType.DRAW_CARD) {
+            int drawCount = card.attack();
+
+            for (int i = 0; i < drawCount; i++) {
+                me.drawCard(cardCatalog.getRandomCardId());
+            }
+
+            logs.add(me.getName() + "이(가) " + card.name() + "으로 카드를 "
+                    + drawCount + "장 뽑았습니다.");
+            return;
+        }
+
+        throw new IllegalStateException("지원하지 않는 주문 효과입니다.");
     }
 
     private void resolveCombat(GameState state, List<String> logs) {

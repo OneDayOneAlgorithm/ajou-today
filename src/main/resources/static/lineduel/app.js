@@ -432,6 +432,11 @@ function renderHand(elementId, playerNumber, player, state) {
         div.innerHTML = `
             <strong>${card.name}</strong>
             <p class="card-type">${getCardTypeText(card.type)}</p>
+            ${
+                    card.type === "SPELL"
+                        ? `<p class="spell-effect">${getSpellEffectText(card.spellEffectType)}</p>`
+                        : ""
+                }
             <p>Cost ${card.cost}</p>
             <p>${getCardStatText(card)}</p>
             <small>${card.description}</small>
@@ -970,8 +975,36 @@ function getCardStatText(card) {
     }
 
     if (card.type === "SPELL") {
-        return `Damage ${card.attack}`;
+        if (card.spellEffectType === "DAMAGE_HERO") {
+            return `Damage ${card.attack}`;
+        }
+
+        if (card.spellEffectType === "HEAL_SELF") {
+            return `Heal ${card.attack}`;
+        }
+
+        if (card.spellEffectType === "DRAW_CARD") {
+            return `Draw ${card.attack}`;
+        }
+
+        return "Spell";
     }
 
     return `ATK ${card.attack} / HP ${card.hp}`;
+}
+
+function getSpellEffectText(effectType) {
+    if (effectType === "DAMAGE_HERO") {
+        return "상대 피해";
+    }
+
+    if (effectType === "HEAL_SELF") {
+        return "자기 회복";
+    }
+
+    if (effectType === "DRAW_CARD") {
+        return "카드 드로우";
+    }
+
+    return "";
 }
