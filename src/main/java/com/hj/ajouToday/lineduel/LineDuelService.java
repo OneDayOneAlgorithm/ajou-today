@@ -299,26 +299,65 @@ public class LineDuelService {
         PlayerState p1 = state.getPlayer1();
         PlayerState p2 = state.getPlayer2();
 
-        if (!p1.getField().isEmpty() && !p2.getField().isEmpty()) {
-            UnitState u1 = p1.getField().get(0);
-            UnitState u2 = p2.getField().get(0);
+        List<UnitState> p1Field = p1.getField();
+        List<UnitState> p2Field = p2.getField();
 
-            u1.damage(u2.getAttack());
-            u2.damage(u1.getAttack());
+        int maxSize = Math.max(p1Field.size(), p2Field.size());
 
-            logs.add(u1.getName() + "와(과) " + u2.getName() + "이(가) 전투했습니다.");
-
-            p1.getField().removeIf(UnitState::isDead);
-            p2.getField().removeIf(UnitState::isDead);
-        } else if (!p1.getField().isEmpty()) {
-            UnitState u1 = p1.getField().get(0);
-            p2.reduceHp(u1.getAttack());
-            logs.add("Player 1의 " + u1.getName() + "이(가) Player 2에게 직접 공격했습니다.");
-        } else if (!p2.getField().isEmpty()) {
-            UnitState u2 = p2.getField().get(0);
-            p1.reduceHp(u2.getAttack());
-            logs.add("Player 2의 " + u2.getName() + "이(가) Player 1에게 직접 공격했습니다.");
+        if (maxSize == 0) {
+            logs.add("전투할 유닛이 없습니다.");
+            return;
         }
+
+        for (int i = 0; i < maxSize; i++) {
+            UnitState p1Unit = i < p1Field.size() ? p1Field.get(i) : null;
+            UnitState p2Unit = i < p2Field.size() ? p2Field.get(i) : null;
+
+            if (p1Unit != null && p2Unit != null) {
+                fightUnits(p1Unit, p2Unit, logs);
+            } else if (p1Unit != null) {
+                attackHero(p1, p2, p1Unit, logs);
+            } else if (p2Unit != null) {
+                attackHero(p2, p1, p2Unit, logs);
+            }
+        }
+
+        p1Field.removeIf(UnitState::isDead);
+        p2Field.removeIf(UnitState::isDead);
+    }
+
+    private void fightUnits(UnitState p1Unit, UnitState p2Unit, List<String> logs) {
+        int p1Attack = p1Unit.getAttack();
+        int p2Attack = p2Unit.getAttack();
+
+        p1Unit.damage(p2Attack);
+        p2Unit.damage(p1Attack);
+
+        logs.add(p1Unit.getName() + "와(과) " + p2Unit.getName()
+                + "이(가) 전투했습니다. "
+                + "(" + p1Attack + " ↔ " + p2Attack + ")");
+
+        if (p1Unit.isDead()) {
+            logs.add(p1Unit.getName() + "이(가) 쓰러졌습니다.");
+        }
+
+        if (p2Unit.isDead()) {
+            logs.add(p2Unit.getName() + "이(가) 쓰러졌습니다.");
+        }
+    }
+
+    private void attackHero(
+            PlayerState attacker,
+            PlayerState defender,
+            UnitState unit,
+            List<String> logs
+    ) {
+        defender.reduceHp(unit.getAttack());
+
+        logs.add(attacker.getName() + "의 " + unit.getName()
+                + "이(가) " + defender.getName()
+                + "에게 직접 공격하여 "
+                + unit.getAttack() + " 피해를 줬습니다.");
     }
 
     private void drawAndMana(GameState state) {
