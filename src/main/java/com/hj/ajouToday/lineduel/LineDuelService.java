@@ -236,15 +236,23 @@ public class LineDuelService {
         me.useMana(card.cost());
         me.removeCardFromHand(card.id());
 
-        if (card.hp() > 0) {
+        if (card.type() == CardType.UNIT) {
             UnitState unit = new UnitState(card.name(), card.attack(), card.hp());
             me.getField().add(unit);
+
             logs.add(me.getName() + "이(가) " + card.name() + "을(를) 소환했습니다.");
-        } else {
+            return;
+        }
+
+        if (card.type() == CardType.SPELL) {
             enemy.reduceHp(card.attack());
+
             logs.add(me.getName() + "이(가) " + card.name() + "으로 상대 영웅에게 "
                     + card.attack() + " 피해를 줬습니다.");
+            return;
         }
+
+        throw new IllegalStateException("지원하지 않는 카드 타입입니다.");
     }
 
     private void resolveCombat(GameState state, List<String> logs) {

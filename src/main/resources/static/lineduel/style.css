@@ -353,3 +353,98 @@ button:hover {
 .reconnect-panel strong {
     color: #facc15;
 }
+
+.match-history-panel {
+    background: #1f2937;
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.match-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.match-history-header h2 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.match-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.match-item {
+    background: #111827;
+    border-radius: 12px;
+    padding: 12px;
+    border-left: 4px solid #6b7280;
+}
+
+.finished-match {
+    border-left-color: #60a5fa;
+}
+
+.progress-match {
+    border-left-color: #facc15;
+}
+
+.match-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.match-main strong {
+    color: #f9fafb;
+}
+
+.match-status {
+    font-size: 12px;
+    color: #d1d5db;
+    background: #374151;
+    border-radius: 999px;
+    padding: 4px 8px;
+}
+
+.match-sub {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    color: #d1d5db;
+    font-size: 13px;
+}
+
+.match-time {
+    color: #9ca3af;
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+.empty-history {
+    color: #9ca3af;
+    text-align: center;
+    margin: 12px 0;
+}
+
+.card-type {
+    display: inline-block;
+    margin: 6px 0;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #111827;
+    color: #93c5fd;
+    font-size: 12px;
+    font-weight: bold;
+}

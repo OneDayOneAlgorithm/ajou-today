@@ -5,6 +5,7 @@ let currentState = null;
 let myPlayerNumber = null;
 let selectedCardId = null;
 let selectedHandIndex = null;
+let lastHistoryRefreshGameId = null;
 
 const SAVED_GAME_ID_KEY = "lineDuelGameId";
 const SAVED_PLAYER_NUMBER_KEY = "lineDuelPlayerNumber";
@@ -28,6 +29,7 @@ async function createRoom() {
     myPlayerNumber = result.playerNumber;
     selectedCardId = null;
     selectedHandIndex = null;
+    lastHistoryRefreshGameId = null;
 
     saveCurrentGame();
     hideResultPanel();
@@ -73,6 +75,7 @@ async function joinRoom() {
     myPlayerNumber = result.playerNumber;
     selectedCardId = null;
     selectedHandIndex = null;
+    lastHistoryRefreshGameId = null;
 
     saveCurrentGame();
     hideResultPanel();
@@ -292,12 +295,12 @@ function updateSelectedCardPanel() {
         : currentState.player2;
 
     if (myPlayer.mana < card.cost) {
-        text.innerText = `선택한 카드: ${card.name} / 마나 부족`;
+        text.innerText = `선택한 카드: ${card.name} / ${getCardTypeText(card.type)} / 마나 부족`;
         button.disabled = true;
         return;
     }
 
-    text.innerText = `선택한 카드: ${card.name} / Cost ${card.cost}`;
+    text.innerText = `선택한 카드: ${card.name} / ${getCardTypeText(card.type)} / Cost ${card.cost}`;
     button.disabled = false;
 }
 
@@ -428,8 +431,9 @@ function renderHand(elementId, playerNumber, player, state) {
 
         div.innerHTML = `
             <strong>${card.name}</strong>
+            <p class="card-type">${getCardTypeText(card.type)}</p>
             <p>Cost ${card.cost}</p>
-            <p>ATK ${card.attack} / HP ${card.hp}</p>
+            <p>${getCardStatText(card)}</p>
             <small>${card.description}</small>
             ${!canAfford ? `<p class="card-warning">마나 부족</p>` : ""}
         `;
@@ -590,6 +594,11 @@ function updateResultPanel(state) {
     }
 
     panel.classList.remove("hidden");
+
+    if (lastHistoryRefreshGameId !== state.gameId) {
+        lastHistoryRefreshGameId = state.gameId;
+        loadMatchHistory();
+    }
 
     if (state.winner === "DRAW") {
         title.innerText = "무승부";
@@ -810,4 +819,159 @@ async function reconnectGame() {
 
 window.addEventListener("DOMContentLoaded", function () {
     updateReconnectPanel();
+    loadMatchHistory();
 });
+
+async function loadMatchHistory() {
+    const list = document.getElementById("matchHistoryList");
+
+    if (!list) {
+        return;
+    }
+
+    list.innerHTML = `<p class="empty-history">경기 기록을 불러오는 중...</p>`;
+
+    try {
+        const response = await fetch("/api/lineduel/matches");
+
+        if (!response.ok) {
+            list.innerHTML = `<p class="empty-history">경기 기록을 불러오지 못했습니다.</p>`;
+            return;
+        }
+
+        const matches = await response.json();
+
+        renderMatchHistory(matches);
+    } catch (error) {
+        console.error(error);
+        list.innerHTML = `<p class="empty-history">경기 기록을 불러오지 못했습니다.</p>`;
+    }
+}
+
+function renderMatchHistory(matches) {
+    const list = document.getElementById("matchHistoryList");
+
+    if (!list) {
+        return;
+    }
+
+    if (!matches || matches.length === 0) {
+        list.innerHTML = `<p class="empty-history">아직 경기 기록이 없습니다.</p>`;
+        return;
+    }
+
+    const sortedMatches = [...matches].sort((a, b) => {
+        const aTime = a.endedAt || a.startedAt;
+        const bTime = b.endedAt || b.startedAt;
+
+        return new Date(bTime) - new Date(aTime);
+    });
+
+    list.innerHTML = "";
+
+    sortedMatches.slice(0, 10).forEach(match => {
+        const item = document.createElement("div");
+        item.className = "match-item";
+
+        if (match.status === "FINISHED") {
+            item.classList.add("finished-match");
+        } else {
+            item.classList.add("progress-match");
+        }
+
+        const resultText = getMatchResultText(match);
+        const reasonText = getEndReasonText(match.endReason);
+        const timeText = formatMatchTime(match.endedAt || match.startedAt);
+
+        item.innerHTML = `
+            <div class="match-main">
+                <strong>${resultText}</strong>
+                <span class="match-status">${match.status}</span>
+            </div>
+
+            <div class="match-sub">
+                <span>방 코드: ${match.gameId}</span>
+                <span>턴: ${match.turnCount}</span>
+                <span>종료 사유: ${reasonText}</span>
+            </div>
+
+            <div class="match-time">
+                ${timeText}
+            </div>
+        `;
+
+        list.appendChild(item);
+    });
+}
+
+function getMatchResultText(match) {
+    if (match.status !== "FINISHED") {
+        return "진행 중인 경기";
+    }
+
+    if (match.winner === "DRAW") {
+        return "무승부";
+    }
+
+    return `${match.winner} 승리`;
+}
+
+function getEndReasonText(endReason) {
+    if (!endReason) {
+        return "-";
+    }
+
+    if (endReason === "SURRENDER") {
+        return "항복";
+    }
+
+    if (endReason === "HP_ZERO") {
+        return "HP 0";
+    }
+
+    return endReason;
+}
+
+function formatMatchTime(value) {
+    if (!value) {
+        return "-";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return date.toLocaleString("ko-KR", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+}
+
+function getCardTypeText(type) {
+    if (type === "UNIT") {
+        return "유닛";
+    }
+
+    if (type === "SPELL") {
+        return "주문";
+    }
+
+    return type || "-";
+}
+
+function getCardStatText(card) {
+    if (card.type === "UNIT") {
+        return `ATK ${card.attack} / HP ${card.hp}`;
+    }
+
+    if (card.type === "SPELL") {
+        return `Damage ${card.attack}`;
+    }
+
+    return `ATK ${card.attack} / HP ${card.hp}`;
+}

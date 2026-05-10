@@ -28,6 +28,17 @@
         <button class="secondary-button" onclick="clearSavedGame()">기록 삭제</button>
     </div>
 
+    <div id="matchHistoryPanel" class="match-history-panel">
+        <div class="match-history-header">
+            <h2>최근 경기 기록</h2>
+            <button class="secondary-button" onclick="loadMatchHistory()">새로고침</button>
+        </div>
+
+        <div id="matchHistoryList" class="match-history-list">
+            <p class="empty-history">경기 기록을 불러오는 중...</p>
+        </div>
+    </div>
+
     <div id="roomInfo" class="room-info hidden">
         <p>
             방 코드:
