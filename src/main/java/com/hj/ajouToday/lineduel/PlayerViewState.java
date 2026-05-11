@@ -12,6 +12,8 @@ public class PlayerViewState {
     private int handCount;
     private List<UnitState> field;
     private int maxFieldSize;
+    private int deckCount;
+    private int maxDeckSize;
     private boolean handVisible;
 
     public PlayerViewState(
@@ -24,6 +26,8 @@ public class PlayerViewState {
             int handCount,
             List<UnitState> field,
             int maxFieldSize,
+            int deckCount,
+            int maxDeckSize,
             boolean handVisible
     ) {
         this.name = name;
@@ -35,6 +39,8 @@ public class PlayerViewState {
         this.handCount = handCount;
         this.field = field;
         this.maxFieldSize = maxFieldSize;
+        this.deckCount = deckCount;
+        this.maxDeckSize = maxDeckSize;
         this.handVisible = handVisible;
     }
 
@@ -72,6 +78,14 @@ public class PlayerViewState {
 
     public List<UnitState> getField() {
         return field;
+    }
+
+    public int getDeckCount() {
+        return deckCount;
+    }
+
+    public int getMaxDeckSize() {
+        return maxDeckSize;
     }
 
     public boolean isHandVisible() {

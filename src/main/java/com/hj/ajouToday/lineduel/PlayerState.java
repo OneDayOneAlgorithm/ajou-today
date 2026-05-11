@@ -13,6 +13,8 @@ public class PlayerState {
     private int maxMana;
 
     private List<Integer> hand = new ArrayList<>();
+    private List<Integer> deck = new ArrayList<>();
+    private int maxDeckSize;
     private List<UnitState> field = new ArrayList<>();
 
     public PlayerState() {}
@@ -23,7 +25,6 @@ public class PlayerState {
         this.hp = this.maxHp;
         this.maxMana = 5;
         this.mana = 5;
-        this.hand.addAll(List.of(1, 2, 3, 4));
     }
 
     public String getName() { return name; }
@@ -75,5 +76,31 @@ public class PlayerState {
 
     public int getMaxFieldSize() {
         return MAX_FIELD_SIZE;
+    }
+
+    public void initializeDeck(List<Integer> deckIds) {
+        this.deck.clear();
+        this.deck.addAll(deckIds);
+        this.maxDeckSize = deckIds.size();
+        this.hand.clear();
+    }
+
+    public Integer drawFromDeck() {
+        if (this.deck.isEmpty()) {
+            return null;
+        }
+
+        Integer cardId = this.deck.remove(0);
+        this.hand.add(cardId);
+
+        return cardId;
+    }
+
+    public int getDeckCount() {
+        return deck.size();
+    }
+
+    public int getMaxDeckSize() {
+        return maxDeckSize;
     }
 }

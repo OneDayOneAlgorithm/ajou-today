@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Collections;
 
 @Service
 public class LineDuelService {
@@ -33,6 +34,8 @@ public class LineDuelService {
         String gameId = generateRoomCode();
 
         GameState state = new GameState(gameId);
+
+        setupInitialDecks(state);
 
         int playerNumber = state.joinPlayer();
 
@@ -292,13 +295,26 @@ public class LineDuelService {
 
         if (card.spellEffectType() == SpellEffectType.DRAW_CARD) {
             int drawCount = card.attack();
+            int actualDrawCount = 0;
 
             for (int i = 0; i < drawCount; i++) {
-                me.drawCard(cardCatalog.getRandomCardId());
+                Integer drawnCardId = me.drawFromDeck();
+
+                if (drawnCardId == null) {
+                    break;
+                }
+
+                actualDrawCount++;
             }
 
-            logs.add(me.getName() + "이(가) " + card.name() + "으로 카드를 "
-                    + drawCount + "장 뽑았습니다.");
+            if (actualDrawCount > 0) {
+                logs.add(me.getName() + "이(가) " + card.name() + "으로 카드를 "
+                        + actualDrawCount + "장 뽑았습니다.");
+            } else {
+                logs.add(me.getName() + "의 덱이 비어 있어 " + card.name()
+                        + "으로 카드를 뽑지 못했습니다.");
+            }
+
             return;
         }
 
@@ -370,12 +386,26 @@ public class LineDuelService {
                 + unit.getAttack() + " 피해를 줬습니다.");
     }
 
-    private void drawAndMana(GameState state) {
+    private void drawAndMana(GameState state, List<String> logs) {
         state.getPlayer1().increaseMana();
         state.getPlayer2().increaseMana();
 
-        state.getPlayer1().drawCard(cardCatalog.getRandomCardId());
-        state.getPlayer2().drawCard(cardCatalog.getRandomCardId());
+        Integer p1DrawnCardId = state.getPlayer1().drawFromDeck();
+        Integer p2DrawnCardId = state.getPlayer2().drawFromDeck();
+
+        if (p1DrawnCardId != null) {
+            Card card = cardCatalog.getCard(p1DrawnCardId);
+            logs.add("Player 1이(가) 카드를 1장 뽑았습니다: " + card.name());
+        } else {
+            logs.add("Player 1의 덱이 비어 있어 카드를 뽑지 못했습니다.");
+        }
+
+        if (p2DrawnCardId != null) {
+            Card card = cardCatalog.getCard(p2DrawnCardId);
+            logs.add("Player 2이(가) 카드를 1장 뽑았습니다: " + card.name());
+        } else {
+            logs.add("Player 2의 덱이 비어 있어 카드를 뽑지 못했습니다.");
+        }
     }
 
     private void resolveSubmittedTurn(GameState state, List<String> logs) {
@@ -390,7 +420,7 @@ public class LineDuelService {
 
         resolveCombat(state, logs);
 
-        drawAndMana(state);
+        drawAndMana(state, logs);
 
         state.clearActions();
 
@@ -471,6 +501,8 @@ public class LineDuelService {
                 player.getHand().size(),
                 new ArrayList<>(player.getField()),
                 player.getMaxFieldSize(),
+                player.getDeckCount(),
+                player.getMaxDeckSize(),
                 handVisible
         );
     }
@@ -519,5 +551,22 @@ public class LineDuelService {
     public LineDuelMatch getMatch(String gameId) {
         return matchRepository.findByGameId(gameId)
                 .orElseThrow(() -> new IllegalArgumentException("매치 기록을 찾을 수 없습니다."));
+    }
+
+    private void setupInitialDecks(GameState state) {
+        setupPlayerDeck(state.getPlayer1());
+        setupPlayerDeck(state.getPlayer2());
+    }
+
+    private void setupPlayerDeck(PlayerState player) {
+        List<Integer> deck = cardCatalog.createDefaultDeck();
+
+        Collections.shuffle(deck);
+
+        player.initializeDeck(deck);
+
+        for (int i = 0; i < 4; i++) {
+            player.drawFromDeck();
+        }
     }
 }

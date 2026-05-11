@@ -388,26 +388,14 @@ function renderPendingStatus(state) {
 }
 
 function renderPlayerToElements(prefix, player) {
-    const hpEl = document.getElementById(`${prefix}Hp`);
-    const manaEl = document.getElementById(`${prefix}Mana`);
-    const fieldCountEl = document.getElementById(`${prefix}FieldCount`);
+    document.getElementById(`${prefix}Hp`).innerText = `${player.hp} / ${player.maxHp}`;
+    document.getElementById(`${prefix}Mana`).innerText = `${player.mana} / ${player.maxMana}`;
+    document.getElementById(`${prefix}FieldCount`).innerText =
+        `${player.field.length} / ${player.maxFieldSize}`;
+    document.getElementById(`${prefix}DeckCount`).innerText =
+        `${player.deckCount} / ${player.maxDeckSize}`;
+
     const field = document.getElementById(`${prefix}Field`);
-
-    if (!hpEl || !manaEl || !fieldCountEl || !field) {
-        console.error("플레이어 렌더링 DOM 요소가 없습니다:", {
-            prefix,
-            hpEl,
-            manaEl,
-            fieldCountEl,
-            field
-        });
-        return;
-    }
-
-    hpEl.innerText = `${player.hp} / ${player.maxHp}`;
-    manaEl.innerText = `${player.mana} / ${player.maxMana}`;
-    fieldCountEl.innerText = `${player.field.length} / ${player.maxFieldSize}`;
-
     field.innerHTML = "";
 
     player.field.forEach(unit => {
