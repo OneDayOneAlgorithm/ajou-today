@@ -394,6 +394,7 @@ function renderPlayerToElements(prefix, player) {
         `${player.field.length} / ${player.maxFieldSize}`;
     document.getElementById(`${prefix}DeckCount`).innerText =
         `${player.deckCount} / ${player.maxDeckSize}`;
+    document.getElementById(`${prefix}Fatigue`).innerText = player.fatigueDamage;
 
     const field = document.getElementById(`${prefix}Field`);
     field.innerHTML = "";

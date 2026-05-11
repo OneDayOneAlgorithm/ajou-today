@@ -295,24 +295,12 @@ public class LineDuelService {
 
         if (card.spellEffectType() == SpellEffectType.DRAW_CARD) {
             int drawCount = card.attack();
-            int actualDrawCount = 0;
+
+            logs.add(me.getName() + "이(가) " + card.name()
+                    + " 효과로 카드를 " + drawCount + "장 뽑으려 합니다.");
 
             for (int i = 0; i < drawCount; i++) {
-                Integer drawnCardId = me.drawFromDeck();
-
-                if (drawnCardId == null) {
-                    break;
-                }
-
-                actualDrawCount++;
-            }
-
-            if (actualDrawCount > 0) {
-                logs.add(me.getName() + "이(가) " + card.name() + "으로 카드를 "
-                        + actualDrawCount + "장 뽑았습니다.");
-            } else {
-                logs.add(me.getName() + "의 덱이 비어 있어 " + card.name()
-                        + "으로 카드를 뽑지 못했습니다.");
+                drawCardOrTakeFatigue(me, logs);
             }
 
             return;
@@ -390,22 +378,8 @@ public class LineDuelService {
         state.getPlayer1().increaseMana();
         state.getPlayer2().increaseMana();
 
-        Integer p1DrawnCardId = state.getPlayer1().drawFromDeck();
-        Integer p2DrawnCardId = state.getPlayer2().drawFromDeck();
-
-        if (p1DrawnCardId != null) {
-            Card card = cardCatalog.getCard(p1DrawnCardId);
-            logs.add("Player 1이(가) 카드를 1장 뽑았습니다: " + card.name());
-        } else {
-            logs.add("Player 1의 덱이 비어 있어 카드를 뽑지 못했습니다.");
-        }
-
-        if (p2DrawnCardId != null) {
-            Card card = cardCatalog.getCard(p2DrawnCardId);
-            logs.add("Player 2이(가) 카드를 1장 뽑았습니다: " + card.name());
-        } else {
-            logs.add("Player 2의 덱이 비어 있어 카드를 뽑지 못했습니다.");
-        }
+        drawCardOrTakeFatigue(state.getPlayer1(), logs);
+        drawCardOrTakeFatigue(state.getPlayer2(), logs);
     }
 
     private void resolveSubmittedTurn(GameState state, List<String> logs) {
@@ -424,40 +398,7 @@ public class LineDuelService {
 
         state.clearActions();
 
-        if (state.getPlayer1().getHp() <= 0 && state.getPlayer2().getHp() <= 0) {
-            state.finish("DRAW");
-            logs.add("게임이 무승부로 종료되었습니다.");
-
-            saveMatchResult(
-                    state,
-                    "DRAW",
-                    "DRAW",
-                    "HP_ZERO"
-            );
-
-        } else if (state.getPlayer1().getHp() <= 0) {
-            state.finish("Player 2");
-            logs.add("Player 2이(가) 승리했습니다.");
-
-            saveMatchResult(
-                    state,
-                    "Player 2",
-                    "Player 1",
-                    "HP_ZERO"
-            );
-
-        } else if (state.getPlayer2().getHp() <= 0) {
-            state.finish("Player 1");
-            logs.add("Player 1이(가) 승리했습니다.");
-
-            saveMatchResult(
-                    state,
-                    "Player 1",
-                    "Player 2",
-                    "HP_ZERO"
-            );
-
-        } else {
+        if (!checkAndFinishGame(state, logs, "HP_ZERO")) {
             state.nextTurn();
         }
     }
@@ -497,6 +438,7 @@ public class LineDuelService {
                 player.getMaxHp(),
                 player.getMana(),
                 player.getMaxMana(),
+                player.getFatigueDamage(),
                 visibleHand,
                 player.getHand().size(),
                 new ArrayList<>(player.getField()),
@@ -568,5 +510,73 @@ public class LineDuelService {
         for (int i = 0; i < 4; i++) {
             player.drawFromDeck();
         }
+    }
+
+    private void drawCardOrTakeFatigue(
+            PlayerState player,
+            List<String> logs
+    ) {
+        Integer drawnCardId = player.drawFromDeck();
+
+        if (drawnCardId != null) {
+            Card card = cardCatalog.getCard(drawnCardId);
+            logs.add(player.getName() + "이(가) 카드를 1장 뽑았습니다: " + card.name());
+            return;
+        }
+
+        int damage = player.takeFatigueDamage();
+
+        logs.add(player.getName() + "의 덱이 비어 있어 피로 피해 "
+                + damage + "을(를) 받았습니다.");
+    }
+
+    private boolean checkAndFinishGame(
+            GameState state,
+            List<String> logs,
+            String endReason
+    ) {
+        if (state.getPlayer1().getHp() <= 0 && state.getPlayer2().getHp() <= 0) {
+            state.finish("DRAW");
+            logs.add("게임이 무승부로 종료되었습니다.");
+
+            saveMatchResult(
+                    state,
+                    "DRAW",
+                    "DRAW",
+                    endReason
+            );
+
+            return true;
+        }
+
+        if (state.getPlayer1().getHp() <= 0) {
+            state.finish("Player 2");
+            logs.add("Player 2이(가) 승리했습니다.");
+
+            saveMatchResult(
+                    state,
+                    "Player 2",
+                    "Player 1",
+                    endReason
+            );
+
+            return true;
+        }
+
+        if (state.getPlayer2().getHp() <= 0) {
+            state.finish("Player 1");
+            logs.add("Player 1이(가) 승리했습니다.");
+
+            saveMatchResult(
+                    state,
+                    "Player 1",
+                    "Player 2",
+                    endReason
+            );
+
+            return true;
+        }
+
+        return false;
     }
 }

@@ -11,7 +11,7 @@ public class PlayerState {
     private int maxHp;
     private int mana;
     private int maxMana;
-
+    private int fatigueDamage;
     private List<Integer> hand = new ArrayList<>();
     private List<Integer> deck = new ArrayList<>();
     private int maxDeckSize;
@@ -25,6 +25,7 @@ public class PlayerState {
         this.hp = this.maxHp;
         this.maxMana = 5;
         this.mana = 5;
+        this.fatigueDamage = 0;
     }
 
     public String getName() { return name; }
@@ -66,6 +67,8 @@ public class PlayerState {
         return maxMana;
     }
 
+    public int getFatigueDamage() {return fatigueDamage; }
+
     public int getMaxHp() {
         return maxHp;
     }
@@ -102,5 +105,12 @@ public class PlayerState {
 
     public int getMaxDeckSize() {
         return maxDeckSize;
+    }
+
+    public int takeFatigueDamage() {
+        this.fatigueDamage++;
+        this.hp -= this.fatigueDamage;
+
+        return this.fatigueDamage;
     }
 }

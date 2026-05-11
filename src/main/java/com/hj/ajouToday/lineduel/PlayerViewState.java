@@ -8,6 +8,7 @@ public class PlayerViewState {
     private int maxHp;
     private int mana;
     private int maxMana;
+    private int fatigueDamage;
     private List<Integer> hand;
     private int handCount;
     private List<UnitState> field;
@@ -22,6 +23,7 @@ public class PlayerViewState {
             int maxHp,
             int mana,
             int maxMana,
+            int fatigueDamage,
             List<Integer> hand,
             int handCount,
             List<UnitState> field,
@@ -35,6 +37,7 @@ public class PlayerViewState {
         this.maxHp = maxHp;
         this.mana = mana;
         this.maxMana = maxMana;
+        this.fatigueDamage = fatigueDamage;
         this.hand = hand;
         this.handCount = handCount;
         this.field = field;
@@ -70,6 +73,10 @@ public class PlayerViewState {
 
     public int getMaxHp() {
         return maxHp;
+    }
+
+    public int getFatigueDamage() {
+        return fatigueDamage;
     }
 
     public int getMaxFieldSize() {
