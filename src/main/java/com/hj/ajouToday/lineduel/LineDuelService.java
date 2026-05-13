@@ -441,6 +441,7 @@ public class LineDuelService {
                 player.getFatigueDamage(),
                 visibleHand,
                 player.getHand().size(),
+                player.getMaxHandSize(),
                 new ArrayList<>(player.getField()),
                 player.getMaxFieldSize(),
                 player.getDeckCount(),
@@ -516,18 +517,27 @@ public class LineDuelService {
             PlayerState player,
             List<String> logs
     ) {
-        Integer drawnCardId = player.drawFromDeck();
+        DrawResult drawResult = player.drawFromDeck();
 
-        if (drawnCardId != null) {
-            Card card = cardCatalog.getCard(drawnCardId);
+        if (drawResult.isDrawn()) {
+            Card card = cardCatalog.getCard(drawResult.getCardId());
             logs.add(player.getName() + "이(가) 카드를 1장 뽑았습니다: " + card.name());
             return;
         }
 
-        int damage = player.takeFatigueDamage();
+        if (drawResult.isBurned()) {
+            Card card = cardCatalog.getCard(drawResult.getCardId());
+            logs.add(player.getName() + "의 손패가 가득 차서 "
+                    + card.name() + " 카드가 버려졌습니다.");
+            return;
+        }
 
-        logs.add(player.getName() + "의 덱이 비어 있어 피로 피해 "
-                + damage + "을(를) 받았습니다.");
+        if (drawResult.isDeckEmpty()) {
+            int damage = player.takeFatigueDamage();
+
+            logs.add(player.getName() + "의 덱이 비어 있어 피로 피해 "
+                    + damage + "을(를) 받았습니다.");
+        }
     }
 
     private boolean checkAndFinishGame(

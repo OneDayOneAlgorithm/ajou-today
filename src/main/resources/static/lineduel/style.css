@@ -6,9 +6,9 @@ body {
 }
 
 .container {
-    max-width: 960px;
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 28px 20px;
     text-align: center;
 }
 
@@ -41,9 +41,10 @@ button:hover {
 }
 
 .game {
-    margin-top: 30px;
+    margin-top: 24px;
 }
 
+/* 기존 status/board는 예전 구조용. 남겨도 되지만 새 레이아웃에서는 거의 사용하지 않음 */
 .status {
     display: flex;
     justify-content: space-between;
@@ -58,34 +59,24 @@ button:hover {
     gap: 20px;
 }
 
-.player, .log {
+.player,
+.log {
     background: #1f2937;
     border-radius: 16px;
     padding: 20px;
 }
 
-.field, .hand {
+.field,
+.hand {
     display: flex;
-    gap: 12px;
+    gap: 14px;
     justify-content: center;
     flex-wrap: wrap;
     min-height: 90px;
 }
 
-.card, .unit {
-    background: #374151;
-    border: 1px solid #4b5563;
-    border-radius: 12px;
-    width: 130px;
-    padding: 12px;
-}
-
-.card {
-    cursor: pointer;
-}
-
-.card:hover {
-    background: #4b5563;
+.hand {
+    align-items: flex-start;
 }
 
 .log ul {
@@ -107,6 +98,7 @@ button:hover {
     font-size: 14px;
 }
 
+/* 로비 */
 .lobby {
     display: flex;
     gap: 12px;
@@ -141,66 +133,6 @@ button:hover {
     margin: 6px 0;
 }
 
-.hidden-card {
-    background: #111827;
-    border: 1px dashed #6b7280;
-    opacity: 0.8;
-}
-
-.action-panel {
-    background: #1f2937;
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-
-.action-panel p {
-    margin: 0;
-    color: #e5e7eb;
-    font-weight: bold;
-}
-
-.action-panel button:disabled {
-    background: #4b5563;
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.selected-card {
-    border: 2px solid #60a5fa;
-    background: #1d4ed8;
-    transform: translateY(-6px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
-}
-
-.disabled-card {
-    opacity: 0.35;
-    filter: grayscale(0.7);
-    cursor: not-allowed;
-}
-
-.disabled-card:hover {
-    background: #374151;
-    transform: none;
-}
-
-.card-warning {
-    margin-top: 8px;
-    color: #fca5a5;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.card:not(.disabled-card):hover {
-    background: #4b5563;
-    transform: translateY(-4px);
-}
-
 .copy-button {
     margin-left: 8px;
     padding: 6px 10px;
@@ -219,6 +151,7 @@ button:hover {
     min-height: 20px;
 }
 
+/* 결과 패널 */
 .result-panel {
     background: #111827;
     border: 2px solid #60a5fa;
@@ -255,8 +188,21 @@ button:hover {
     background: #6b7280;
 }
 
+.danger-button {
+    background: #dc2626;
+}
+
+.danger-button:hover {
+    background: #b91c1c;
+}
+
+/* 로그 색상 */
 .damage-log {
     border-left: 4px solid #f87171;
+}
+
+.heal-log {
+    border-left: 4px solid #22c55e;
 }
 
 .summon-log {
@@ -271,6 +217,23 @@ button:hover {
     border-left: 4px solid #facc15;
 }
 
+.new-log {
+    animation: newLogFlash 0.75s ease;
+}
+
+@keyframes newLogFlash {
+    0% {
+        background: rgba(250, 204, 21, 0.28);
+        transform: translateX(4px);
+    }
+
+    100% {
+        background: #111827;
+        transform: translateX(0);
+    }
+}
+
+/* 플레이어 영역 */
 .me {
     border: 1px solid #60a5fa;
 }
@@ -287,6 +250,7 @@ button:hover {
     color: #fecaca;
 }
 
+/* 대기 패널 */
 .waiting-panel {
     background: #1f2937;
     border: 2px dashed #60a5fa;
@@ -322,21 +286,7 @@ button:hover {
     color: #facc15;
 }
 
-.action-buttons {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.danger-button {
-    background: #dc2626;
-}
-
-.danger-button:hover {
-    background: #b91c1c;
-}
-
+/* 재접속 */
 .reconnect-panel {
     background: #1f2937;
     border: 1px solid #60a5fa;
@@ -354,6 +304,7 @@ button:hover {
     color: #facc15;
 }
 
+/* 전적 */
 .match-history-panel {
     background: #1f2937;
     border-radius: 16px;
@@ -438,7 +389,9 @@ button:hover {
     margin: 12px 0;
 }
 
-.card-type {
+/* 카드 UI */
+.card-type,
+.spell-effect {
     display: inline-block;
     margin: 6px 0;
     padding: 3px 8px;
@@ -450,12 +403,885 @@ button:hover {
 }
 
 .spell-effect {
-    display: inline-block;
     margin: 4px 0;
-    padding: 3px 8px;
-    border-radius: 999px;
     background: #312e81;
     color: #c4b5fd;
+}
+
+.game-card {
+    position: relative;
+    width: 150px;
+    min-height: 220px;
+    padding: 12px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #374151 0%, #111827 100%);
+    border: 2px solid #4b5563;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.game-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.45);
+    border-color: #93c5fd;
+}
+
+.unit-card {
+    background:
+            radial-gradient(circle at top, rgba(96, 165, 250, 0.22), transparent 45%),
+            linear-gradient(180deg, #1f2937 0%, #111827 100%);
+}
+
+.spell-card {
+    background:
+            radial-gradient(circle at top, rgba(168, 85, 247, 0.26), transparent 45%),
+            linear-gradient(180deg, #312e81 0%, #111827 100%);
+}
+
+.mana-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: #2563eb;
+    color: white;
+    border: 2px solid #bfdbfe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 18px;
+    z-index: 2;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+.card-art {
+    height: 74px;
+    margin: 16px 0 10px;
+    border-radius: 14px;
+    background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+            #1f2937;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-art span {
+    font-size: 44px;
+    filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.45));
+}
+
+.card-name {
+    font-size: 17px;
+    font-weight: 800;
+    color: #f9fafb;
+    margin-bottom: 8px;
+    min-height: 24px;
+}
+
+.card-meta-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 24px;
+    margin-bottom: 8px;
+}
+
+.card-type-pill,
+.spell-effect-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.card-type-pill {
+    background: #0f172a;
+    color: #93c5fd;
+    border: 1px solid #1d4ed8;
+}
+
+.spell-effect-pill {
+    background: #2e1065;
+    color: #d8b4fe;
+    border: 1px solid #7e22ce;
+}
+
+.card-description {
+    min-height: 42px;
+    color: #d1d5db;
     font-size: 12px;
+    line-height: 1.35;
+    margin-bottom: 14px;
+}
+
+.card-bottom-stats {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.attack-badge,
+.hp-badge,
+.spell-power-badge {
+    min-width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 900;
+    font-size: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+.attack-badge {
+    background: #dc2626;
+}
+
+.attack-badge::before {
+    content: "⚔ ";
+    font-size: 12px;
+}
+
+.hp-badge {
+    background: #16a34a;
+}
+
+.hp-badge::before {
+    content: "♥ ";
+    font-size: 12px;
+}
+
+.spell-stats {
+    justify-content: center;
+}
+
+.spell-power-badge {
+    width: auto;
+    padding: 0 10px;
+    background: #7c3aed;
+    font-size: 12px;
+}
+
+.card-warning-area {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+}
+
+.card-warning {
+    margin: 0;
+    color: #fecaca;
+    background: rgba(127, 29, 29, 0.9);
+    border: 1px solid #ef4444;
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.selected-card {
+    border-color: #facc15;
+    transform: translateY(-10px);
+    box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.25), 0 18px 34px rgba(0, 0, 0, 0.5);
+}
+
+.disabled-card {
+    opacity: 0.38;
+    filter: grayscale(0.8);
+    cursor: not-allowed;
+}
+
+.disabled-card:hover {
+    transform: none;
+    border-color: #4b5563;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
+}
+
+.card-back {
+    background:
+            repeating-linear-gradient(
+                    45deg,
+                    #1e3a8a,
+                    #1e3a8a 10px,
+                    #172554 10px,
+                    #172554 20px
+            );
+    border-color: #60a5fa;
+    cursor: not-allowed;
+}
+
+.card-back-inner {
+    height: 100%;
+    min-height: 190px;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.card-back-symbol {
+    font-size: 42px;
+    color: #bfdbfe;
+}
+
+.card-back-title {
+    color: white;
+    font-weight: 900;
+    letter-spacing: 2px;
+    line-height: 1.2;
+}
+
+/* 상대 손패 축소 */
+.compact-hand {
+    min-height: 72px;
+}
+
+.compact-hand .game-card {
+    width: 88px;
+    min-height: 126px;
+    padding: 8px;
+    border-radius: 14px;
+}
+
+.compact-hand .card-back-inner {
+    min-height: 104px;
+}
+
+.compact-hand .card-back-symbol {
+    font-size: 26px;
+}
+
+.compact-hand .card-back-title {
+    font-size: 11px;
+    letter-spacing: 1px;
+}
+
+/* 내 손패도 새 레이아웃에서는 약간 압축 */
+.battle-area .me .game-card {
+    width: 132px;
+    min-height: 196px;
+}
+
+.battle-area .me .card-art {
+    height: 58px;
+    margin: 12px 0 8px;
+}
+
+.battle-area .me .card-art span {
+    font-size: 34px;
+}
+
+.battle-area .me .card-description {
+    min-height: 34px;
+    font-size: 11px;
+}
+
+.battle-area .me .card-name {
+    font-size: 15px;
+}
+
+/* 유닛 */
+.unit {
+    background: #374151;
+    border: 1px solid #4b5563;
+    border-radius: 12px;
+    width: 130px;
+    padding: 12px;
+}
+
+/* 상태바 */
+.player-status-panel {
+    background: #111827;
+    border: 1px solid #374151;
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.status-bar-row {
+    display: grid;
+    grid-template-columns: 44px 1fr 72px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.status-label {
+    font-weight: 900;
+    color: #e5e7eb;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+}
+
+.status-value {
+    font-weight: 800;
+    color: #f9fafb;
+    font-size: 13px;
+    text-align: right;
+}
+
+.status-bar {
+    height: 18px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #1f2937;
+    border: 1px solid #4b5563;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+
+.status-bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    transition: width 0.28s ease;
+}
+
+.hp-bar-bg {
+    background: #3f1d1d;
+}
+
+.hp-bar-fill {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.mana-bar-bg {
+    background: #172554;
+}
+
+.mana-bar-fill {
+    background: linear-gradient(90deg, #2563eb, #60a5fa);
+}
+
+.mini-stat-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.mini-stat-row span {
+    background: #1f2937;
+    border: 1px solid #374151;
+    color: #d1d5db;
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 12px;
+}
+
+.mini-stat-row strong {
+    color: #facc15;
+}
+
+/* 제출 슬롯 */
+.action-panel {
+    background: #111827;
+    border-radius: 14px;
+    padding: 14px;
+    margin-top: 16px;
+    display: block;
+}
+
+.in-hand-action {
+    position: sticky;
+    bottom: 12px;
+    z-index: 10;
+    border: 1px solid #374151;
+}
+
+.action-panel p {
+    margin: 0;
+    color: #e5e7eb;
     font-weight: bold;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.action-panel button:disabled {
+    background: #4b5563;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.submit-slot-wrapper {
+    width: 100%;
+}
+
+.submit-slot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.submit-slot-header h3 {
+    margin: 0 0 4px;
+    color: #f9fafb;
+    font-size: 18px;
+}
+
+.submit-slot-header p {
+    margin: 0;
+    color: #d1d5db;
+    font-size: 14px;
+}
+
+.submit-slot {
+    min-height: 92px;
+    border-radius: 16px;
+    border: 2px dashed #4b5563;
+    background: #111827;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.empty-submit-slot {
+    color: #9ca3af;
+    font-weight: 700;
+}
+
+.filled-submit-slot {
+    border-style: solid;
+    border-color: #facc15;
+    box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.12);
+}
+
+.submit-card-preview {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+}
+
+.submit-card-art {
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
+    background: #1f2937;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.submit-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.submit-card-info strong {
+    color: #f9fafb;
+    font-size: 18px;
+}
+
+.submit-card-info span {
+    color: #93c5fd;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.submit-card-info small {
+    color: #d1d5db;
+    font-size: 12px;
+}
+
+.submit-card-stat {
+    color: #facc15;
+    font-weight: 900;
+    font-size: 14px;
+    background: #1f2937;
+    border: 1px solid #4b5563;
+    border-radius: 999px;
+    padding: 8px 10px;
+    white-space: nowrap;
+}
+
+.submit-slot-buttons {
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+#clearSelectedButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dragging-card {
+    opacity: 0.55;
+    transform: scale(0.96);
+    border-color: #facc15;
+}
+
+.submit-slot-drag-over {
+    border-color: #22c55e;
+    background:
+            radial-gradient(circle at center, rgba(34, 197, 94, 0.2), transparent 55%),
+            #111827;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.16);
+    transform: translateY(-2px);
+}
+
+.submitting-slot {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.16);
+    animation: submittingPulse 1.1s ease-in-out infinite;
+}
+
+@keyframes submittingPulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.01);
+        opacity: 0.86;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.submitting-slot .submit-card-stat {
+    background: #0f766e;
+    color: #ccfbf1;
+    border-color: #14b8a6;
+}
+
+/* 제출 상태 */
+.turn-submit-status-panel {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+.submit-status-chip {
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 900;
+    border: 1px solid transparent;
+}
+
+.waiting-chip {
+    background: #1f2937;
+    color: #d1d5db;
+    border-color: #4b5563;
+}
+
+.submitted-chip {
+    background: #064e3b;
+    color: #bbf7d0;
+    border-color: #22c55e;
+}
+
+.submitted-submit-slot {
+    border-style: solid;
+    border-color: #22c55e;
+    background:
+            radial-gradient(circle at center, rgba(34, 197, 94, 0.18), transparent 55%),
+            #111827;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
+}
+
+.submitted-slot-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    text-align: left;
+}
+
+.submitted-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    background: #22c55e;
+    color: #052e16;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    font-weight: 900;
+}
+
+.submitted-slot-content strong {
+    color: #bbf7d0;
+    font-size: 18px;
+}
+
+.submitted-slot-content p {
+    margin: 4px 0 0;
+    color: #d1fae5;
+    font-size: 13px;
+}
+
+/* 손패 잠금 */
+.hand-wrapper {
+    position: relative;
+    border-radius: 18px;
+    padding: 4px;
+}
+
+.hand-wrapper.hand-locked .hand {
+    opacity: 0.38;
+    filter: grayscale(0.7);
+    pointer-events: none;
+}
+
+.hand-lock-overlay {
+    position: absolute;
+    inset: 0;
+    min-height: 100px;
+    border-radius: 18px;
+    background: rgba(17, 24, 39, 0.58);
+    border: 1px solid rgba(34, 197, 94, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+    z-index: 5;
+}
+
+.hand-lock-overlay.hidden {
+    display: none;
+}
+
+.hand-lock-message {
+    background: rgba(6, 78, 59, 0.94);
+    border: 1px solid #22c55e;
+    border-radius: 999px;
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+}
+
+.hand-lock-message strong {
+    color: #bbf7d0;
+    font-size: 15px;
+}
+
+.hand-lock-message span {
+    color: #d1fae5;
+    font-size: 12px;
+}
+
+/* HP 변화 애니메이션 */
+.hp-damaged {
+    animation: hpDamageShake 0.55s ease;
+}
+
+.hp-healed {
+    animation: hpHealGlow 0.65s ease;
+}
+
+@keyframes hpDamageShake {
+    0% {
+        transform: translateX(0);
+        box-shadow: 0 0 0 rgba(239, 68, 68, 0);
+    }
+
+    20% {
+        transform: translateX(-5px);
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+    }
+
+    40% {
+        transform: translateX(5px);
+    }
+
+    60% {
+        transform: translateX(-3px);
+    }
+
+    80% {
+        transform: translateX(3px);
+    }
+
+    100% {
+        transform: translateX(0);
+        box-shadow: 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+@keyframes hpHealGlow {
+    0% {
+        box-shadow: 0 0 0 rgba(34, 197, 94, 0);
+    }
+
+    35% {
+        box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.28);
+    }
+
+    100% {
+        box-shadow: 0 0 0 rgba(34, 197, 94, 0);
+    }
+}
+
+/* 새 2컬럼 게임 레이아웃 */
+.game-layout {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.battle-area {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+}
+
+.side-log {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.log-header h3 {
+    margin: 0;
+}
+
+#logTurnBadge {
+    background: #111827;
+    color: #facc15;
+    border: 1px solid #4b5563;
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.side-log ul {
+    flex: 1;
+    max-height: none;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.battle-center {
+    display: flex;
+    justify-content: center;
+}
+
+.battle-center-card {
+    width: 100%;
+    background:
+            radial-gradient(circle at center, rgba(250, 204, 21, 0.12), transparent 55%),
+            #111827;
+    border: 1px solid #374151;
+    border-radius: 16px;
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+}
+
+.battle-center-card span:first-child {
+    text-align: left;
+    color: #bfdbfe;
+    font-weight: 900;
+}
+
+.battle-center-card strong {
+    color: #facc15;
+    font-size: 22px;
+    letter-spacing: 2px;
+}
+
+.battle-center-card span:last-child {
+    text-align: right;
+    color: #fca5a5;
+    font-weight: 900;
+}
+
+.compact-field {
+    min-height: 72px;
+}
+
+.player.enemy {
+    padding-bottom: 14px;
+}
+
+.player.me {
+    padding-top: 14px;
+}
+
+/* 좁은 화면 대응 */
+@media (max-width: 1100px) {
+    .game-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .side-log {
+        position: static;
+        max-height: 260px;
+    }
+
+    .side-log ul {
+        max-height: 210px;
+    }
+
+    .container {
+        max-width: 960px;
+    }
 }

@@ -5,7 +5,17 @@ let currentState = null;
 let myPlayerNumber = null;
 let selectedCardId = null;
 let selectedHandIndex = null;
+let draggedCardId = null;
+let draggedHandIndex = null;
+let isSubmittingCard = false;
 let lastHistoryRefreshGameId = null;
+
+let previousHpByPlayer = {
+    me: null,
+    enemy: null
+};
+
+let previousLogCount = 0;
 
 const SAVED_GAME_ID_KEY = "lineDuelGameId";
 const SAVED_PLAYER_NUMBER_KEY = "lineDuelPlayerNumber";
@@ -30,6 +40,8 @@ async function createRoom() {
     selectedCardId = null;
     selectedHandIndex = null;
     lastHistoryRefreshGameId = null;
+
+    resetVisualMemory();
 
     saveCurrentGame();
     hideResultPanel();
@@ -76,6 +88,8 @@ async function joinRoom() {
     selectedCardId = null;
     selectedHandIndex = null;
     lastHistoryRefreshGameId = null;
+
+    resetVisualMemory();
 
     saveCurrentGame();
     hideResultPanel();
@@ -153,6 +167,10 @@ function showCopyMessage(message) {
 }
 
 function selectCard(playerNumber, cardId, handIndex) {
+    if (isSubmittingCard) {
+        return;
+    }
+
     if (playerNumber !== myPlayerNumber) {
         alert("내 손패만 조작할 수 있습니다.");
         return;
@@ -204,6 +222,10 @@ function selectCard(playerNumber, cardId, handIndex) {
 }
 
 function submitSelectedCard() {
+    if (isSubmittingCard) {
+        return;
+    }
+
     if (currentState && currentState.status === "FINISHED") {
         alert("이미 종료된 게임입니다.");
         return;
@@ -227,16 +249,14 @@ function submitSelectedCard() {
 
     if (!card) {
         alert("존재하지 않는 카드입니다.");
-        selectedCardId = null;
-        selectedHandIndex = null;
+        clearSelectedCardState();
         updateSelectedCardPanel();
         return;
     }
 
     if (myPlayer.mana < card.cost) {
         alert("마나가 부족해서 제출할 수 없습니다.");
-        selectedCardId = null;
-        selectedHandIndex = null;
+        clearSelectedCardState();
         render(currentState, getCurrentLogTexts());
         updateSelectedCardPanel();
         return;
@@ -244,8 +264,7 @@ function submitSelectedCard() {
 
     if (cannotSummonUnit(myPlayer, card)) {
         alert("필드가 가득 차서 유닛을 소환할 수 없습니다.");
-        selectedCardId = null;
-        selectedHandIndex = null;
+        clearSelectedCardState();
         render(currentState, getCurrentLogTexts());
         updateSelectedCardPanel();
         return;
@@ -256,24 +275,35 @@ function submitSelectedCard() {
         return;
     }
 
+    isSubmittingCard = true;
+    updateSelectedCardPanel();
+    updateSubmitSlot();
+
     stompClient.send("/app/lineduel/play", {}, JSON.stringify({
         gameId: gameId,
         playerNumber: myPlayerNumber,
         cardId: selectedCardId
     }));
-
-    selectedCardId = null;
-    selectedHandIndex = null;
-    updateSelectedCardPanel();
 }
 
 function updateSelectedCardPanel() {
+    updateSubmitSlot();
+
     const text = document.getElementById("selectedCardText");
     const button = document.getElementById("submitCardButton");
 
     if (!text || !button) {
         return;
     }
+
+    if (isSubmittingCard) {
+        text.innerText = "카드 제출 중...";
+        button.innerText = "제출 중...";
+        button.disabled = true;
+        return;
+    }
+
+    button.innerText = "선택한 카드 제출";
 
     if (!currentState || currentState.status !== "WAITING_ACTION") {
         text.innerText = "선택한 카드: 없음";
@@ -286,6 +316,7 @@ function updateSelectedCardPanel() {
 
     if (alreadySubmitted) {
         text.innerText = "이번 턴 행동 제출 완료";
+        button.innerText = "제출 완료";
         button.disabled = true;
         return;
     }
@@ -333,6 +364,11 @@ function render(state, logs) {
     document.getElementById("winner").innerText =
         state.status === "FINISHED" ? `승자: ${state.winner}` : "";
 
+    const logTurnBadge = document.getElementById("logTurnBadge");
+    if (logTurnBadge) {
+        logTurnBadge.innerText = `Turn ${state.turn}`;
+    }
+
     const waitingText = document.getElementById("waitingText");
 
     if (state.status === "WAITING_PLAYER") {
@@ -344,8 +380,10 @@ function render(state, logs) {
     renderPerspectiveBoard(state);
 
     renderLogs(logs);
-    renderPendingStatus(state);
+    // renderPendingStatus(state);
     updateWaitingPanel(state);
+    updateTurnSubmitStatusPanel(state);
+    updateHandLockOverlay(state);
     updateSelectedCardPanel();
     updateResultPanel(state);
 }
@@ -388,13 +426,30 @@ function renderPendingStatus(state) {
 }
 
 function renderPlayerToElements(prefix, player) {
-    document.getElementById(`${prefix}Hp`).innerText = `${player.hp} / ${player.maxHp}`;
-    document.getElementById(`${prefix}Mana`).innerText = `${player.mana} / ${player.maxMana}`;
+    const hpText = document.getElementById(`${prefix}Hp`);
+    const manaText = document.getElementById(`${prefix}Mana`);
+    const hpBar = document.getElementById(`${prefix}HpBar`);
+    const manaBar = document.getElementById(`${prefix}ManaBar`);
+
+    hpText.innerText = `${Math.max(0, player.hp)} / ${player.maxHp}`;
+    manaText.innerText = `${Math.max(0, player.mana)} / ${player.maxMana}`;
+
+    setBarPercent(hpBar, player.hp, player.maxHp);
+    setBarPercent(manaBar, player.mana, player.maxMana);
+
+    animateHpChange(prefix, player.hp);
+
+    document.getElementById(`${prefix}HandCount`).innerText =
+        `${player.handCount} / ${player.maxHandSize}`;
+
     document.getElementById(`${prefix}FieldCount`).innerText =
         `${player.field.length} / ${player.maxFieldSize}`;
+
     document.getElementById(`${prefix}DeckCount`).innerText =
         `${player.deckCount} / ${player.maxDeckSize}`;
-    document.getElementById(`${prefix}Fatigue`).innerText = player.fatigueDamage;
+
+    document.getElementById(`${prefix}Fatigue`).innerText =
+        player.fatigueDamage;
 
     const field = document.getElementById(`${prefix}Field`);
     field.innerHTML = "";
@@ -422,10 +477,12 @@ function renderHand(elementId, playerNumber, player, state) {
     if (!isMyHand) {
         for (let i = 0; i < player.handCount; i++) {
             const div = document.createElement("div");
-            div.className = "card hidden-card";
+            div.className = "card game-card hidden-card card-back";
             div.innerHTML = `
-                <strong>상대 카드</strong>
-                <p>?</p>
+                <div class="card-back-inner">
+                    <div class="card-back-symbol">✦</div>
+                    <div class="card-back-title">LINE<br>DUEL</div>
+                </div>
             `;
             div.style.cursor = "not-allowed";
             handDiv.appendChild(div);
@@ -447,7 +504,7 @@ function renderHand(elementId, playerNumber, player, state) {
             !fieldFullForUnit;
 
         const div = document.createElement("div");
-        div.className = "card";
+        div.className = `card game-card ${getCardClassByType(card)}`;
 
         if (selectedCardId === card.id && selectedHandIndex === index) {
             div.classList.add("selected-card");
@@ -458,23 +515,72 @@ function renderHand(elementId, playerNumber, player, state) {
         }
 
         div.innerHTML = `
-            <strong>${card.name}</strong>
-            <p class="card-type">${getCardTypeText(card.type)}</p>
-            ${
+            <div class="mana-badge">${card.cost}</div>
+        
+            <div class="card-art">
+                <span>${getCardArt(card)}</span>
+            </div>
+        
+            <div class="card-name">${card.name}</div>
+        
+            <div class="card-meta-row">
+                <span class="card-type-pill">${getCardTypeText(card.type)}</span>
+                ${
                     card.type === "SPELL"
-                        ? `<p class="spell-effect">${getSpellEffectText(card.spellEffectType)}</p>`
+                        ? `<span class="spell-effect-pill">${getSpellEffectText(card.spellEffectType)}</span>`
                         : ""
                 }
-            <p>Cost ${card.cost}</p>
-            <p>${getCardStatText(card)}</p>
-            <small>${card.description}</small>
-            ${!canAfford ? `<p class="card-warning">마나 부족</p>` : ""}
-            ${fieldFullForUnit ? `<p class="card-warning">필드 가득 참</p>` : ""}
+            </div>
+        
+            <div class="card-description">
+                ${card.description}
+            </div>
+        
+            ${
+                    card.type === "UNIT"
+                        ? `
+                        <div class="card-bottom-stats">
+                            <span class="attack-badge">${card.attack}</span>
+                            <span class="hp-badge">${card.hp}</span>
+                        </div>
+                    `
+                        : `
+                        <div class="card-bottom-stats spell-stats">
+                            <span class="spell-power-badge">${getCardStatText(card)}</span>
+                        </div>
+                    `
+                }
+        
+            <div class="card-warning-area">
+                ${!canAfford ? `<p class="card-warning">마나 부족</p>` : ""}
+                ${fieldFullForUnit ? `<p class="card-warning">필드 가득 참</p>` : ""}
+            </div>
         `;
 
         if (canSelect) {
             div.onclick = () => selectCard(playerNumber, card.id, index);
+
+            div.draggable = true;
+
+            div.addEventListener("dragstart", function (event) {
+                draggedCardId = card.id;
+                draggedHandIndex = index;
+
+                event.dataTransfer.setData("text/plain", String(card.id));
+                event.dataTransfer.effectAllowed = "move";
+
+                div.classList.add("dragging-card");
+            });
+
+            div.addEventListener("dragend", function () {
+                draggedCardId = null;
+                draggedHandIndex = null;
+
+                div.classList.remove("dragging-card");
+                clearSubmitSlotDragState();
+            });
         } else {
+            div.draggable = false;
             div.style.cursor = "not-allowed";
         }
 
@@ -490,22 +596,32 @@ function renderLogs(logs) {
     const ul = document.getElementById("logs");
     ul.innerHTML = "";
 
-    logs.forEach(log => {
+    const hasNewLogs = logs.length > previousLogCount;
+
+    logs.forEach((log, index) => {
         const li = document.createElement("li");
         li.innerText = log;
 
         if (log.includes("피해")) {
             li.classList.add("damage-log");
+        } else if (log.includes("회복")) {
+            li.classList.add("heal-log");
         } else if (log.includes("소환")) {
             li.classList.add("summon-log");
-        } else if (log.includes("입장") || log.includes("생성")) {
+        } else if (log.includes("입장") || log.includes("생성") || log.includes("뽑았습니다")) {
             li.classList.add("system-log");
-        } else if (log.includes("승리") || log.includes("종료")) {
+        } else if (log.includes("승리") || log.includes("종료") || log.includes("항복")) {
             li.classList.add("finish-log");
+        }
+
+        if (hasNewLogs && index >= previousLogCount) {
+            li.classList.add("new-log");
         }
 
         ul.appendChild(li);
     });
+
+    previousLogCount = logs.length;
 
     scrollLogsToBottom();
 }
@@ -536,8 +652,8 @@ function connectSocket(gameId) {
                     return;
                 }
 
-                selectedCardId = null;
-                selectedHandIndex = null;
+                clearSelectedCardState();
+
                 currentState = result.state;
 
                 render(result.state, result.logs);
@@ -560,9 +676,9 @@ function handleServerError(result) {
         renderLogs(currentLogs);
     }
 
-    selectedCardId = null;
-    selectedHandIndex = null;
+    clearSelectedCardState();
     updateSelectedCardPanel();
+    updateSubmitSlot();
 }
 
 function goToLobby() {
@@ -571,6 +687,9 @@ function goToLobby() {
     myPlayerNumber = null;
     selectedCardId = null;
     selectedHandIndex = null;
+
+    resetVisualMemory();
+
 
     if (stompClient && stompClient.connected) {
         stompClient.disconnect(function () {
@@ -597,6 +716,8 @@ function goToLobby() {
     const waitingPanel = document.getElementById("waitingPanel");
     const actionPanel = document.getElementById("actionPanel");
     const surrenderButton = document.getElementById("surrenderButton");
+    const handWrapper = document.getElementById("meHandWrapper");
+    const handOverlay = document.getElementById("meHandLockOverlay");
 
     if (waitingPanel) {
         waitingPanel.classList.add("hidden");
@@ -608,6 +729,14 @@ function goToLobby() {
 
     if (surrenderButton) {
         surrenderButton.classList.add("hidden");
+    }
+
+    if (handWrapper) {
+        handWrapper.classList.remove("hand-locked");
+    }
+
+    if (handOverlay) {
+        handOverlay.classList.add("hidden");
     }
 
     updateReconnectPanel();
@@ -841,6 +970,9 @@ async function reconnectGame() {
     myPlayerNumber = result.playerNumber;
     selectedCardId = null;
     selectedHandIndex = null;
+    lastHistoryRefreshGameId = null;
+
+    resetVisualMemory();
 
     saveCurrentGame();
     hideResultPanel();
@@ -850,11 +982,6 @@ async function reconnectGame() {
     render(currentState, currentState.logs || []);
     updateReconnectPanel();
 }
-
-window.addEventListener("DOMContentLoaded", function () {
-    updateReconnectPanel();
-    loadMatchHistory();
-});
 
 async function loadMatchHistory() {
     const list = document.getElementById("matchHistoryList");
@@ -1049,3 +1176,391 @@ function isFieldFull(player) {
 function cannotSummonUnit(player, card) {
     return card.type === "UNIT" && isFieldFull(player);
 }
+
+function getCardArt(card) {
+    if (!card) {
+        return "❔";
+    }
+
+    if (card.name === "병사") {
+        return "⚔️";
+    }
+
+    if (card.name === "방패병") {
+        return "🛡️";
+    }
+
+    if (card.name === "광전사") {
+        return "🪓";
+    }
+
+    if (card.name === "화염구") {
+        return "🔥";
+    }
+
+    if (card.name === "치유") {
+        return "✨";
+    }
+
+    if (card.name === "지식 탐구") {
+        return "📘";
+    }
+
+    if (card.type === "UNIT") {
+        return "🧍";
+    }
+
+    if (card.type === "SPELL") {
+        return "🔮";
+    }
+
+    return "❔";
+}
+
+function getCardClassByType(card) {
+    if (!card) {
+        return "";
+    }
+
+    if (card.type === "UNIT") {
+        return "unit-card";
+    }
+
+    if (card.type === "SPELL") {
+        return "spell-card";
+    }
+
+    return "";
+}
+
+function setBarPercent(element, current, max) {
+    if (!element) {
+        return;
+    }
+
+    if (!max || max <= 0) {
+        element.style.width = "0%";
+        return;
+    }
+
+    const safeCurrent = Math.max(0, Math.min(current, max));
+    const percent = Math.round((safeCurrent / max) * 100);
+
+    element.style.width = `${percent}%`;
+}
+
+function clearSelectedCard() {
+    if (isSubmittingCard) {
+        return;
+    }
+
+    clearSelectedCardState();
+
+    if (currentState) {
+        render(currentState, getCurrentLogTexts());
+    } else {
+        updateSelectedCardPanel();
+        updateSubmitSlot();
+    }
+}
+
+function updateSubmitSlot() {
+    const submitSlot = document.getElementById("submitSlot");
+    const clearButton = document.getElementById("clearSelectedButton");
+
+    if (!submitSlot || !clearButton) {
+        return;
+    }
+
+    if (currentState && currentState.status === "WAITING_ACTION") {
+        const alreadySubmitted =
+            currentState.pendingActions && currentState.pendingActions[myPlayerNumber];
+
+        if (alreadySubmitted) {
+            submitSlot.className = "submit-slot submitted-submit-slot";
+            submitSlot.innerHTML = `
+                <div class="submitted-slot-content">
+                    <div class="submitted-icon">✓</div>
+                    <div>
+                        <strong>카드 제출 완료</strong>
+                        <p>상대 플레이어의 제출을 기다리는 중입니다.</p>
+                    </div>
+                </div>
+            `;
+            clearButton.disabled = true;
+            return;
+        }
+    }
+
+    if (!selectedCardId) {
+        submitSlot.className = "submit-slot empty-submit-slot";
+        submitSlot.innerHTML = `<span>손패에서 카드를 선택하세요</span>`;
+        clearButton.disabled = true;
+        return;
+    }
+
+    const card = cards.find(c => c.id === selectedCardId);
+
+    if (!card) {
+        submitSlot.className = "submit-slot empty-submit-slot";
+        submitSlot.innerHTML = `<span>선택한 카드를 찾을 수 없습니다</span>`;
+        clearButton.disabled = true;
+        return;
+    }
+
+    submitSlot.className = `submit-slot filled-submit-slot ${getCardClassByType(card)} ${isSubmittingCard ? "submitting-slot" : ""}`;
+    submitSlot.innerHTML = `
+        <div class="submit-card-preview">
+            <div class="submit-card-art">${getCardArt(card)}</div>
+            <div class="submit-card-info">
+                <strong>${card.name}</strong>
+                <span>${getCardTypeText(card.type)} · Cost ${card.cost}</span>
+                <small>${isSubmittingCard ? "서버에 제출 중입니다..." : card.description}</small>
+            </div>
+            <div class="submit-card-stat">
+                ${isSubmittingCard ? "제출 중" : getCardStatText(card)}
+            </div>
+        </div>
+    `;
+
+    clearButton.disabled = isSubmittingCard;
+}
+
+function canDropDraggedCard() {
+    if (isSubmittingCard) {
+        return false;
+    }
+
+    if (!currentState) {
+        return false;
+    }
+
+    if (currentState.status !== "WAITING_ACTION") {
+        return false;
+    }
+
+    if (!draggedCardId && draggedCardId !== 0) {
+        return false;
+    }
+
+    const alreadySubmitted =
+        currentState.pendingActions && currentState.pendingActions[myPlayerNumber];
+
+    if (alreadySubmitted) {
+        return false;
+    }
+
+    const myPlayer = myPlayerNumber === 1
+        ? currentState.player1
+        : currentState.player2;
+
+    const card = cards.find(c => c.id === draggedCardId);
+
+    if (!card) {
+        return false;
+    }
+
+    if (myPlayer.mana < card.cost) {
+        return false;
+    }
+
+    if (cannotSummonUnit(myPlayer, card)) {
+        return false;
+    }
+
+    return true;
+}
+
+function setSubmitSlotDragState(isActive) {
+    const submitSlot = document.getElementById("submitSlot");
+
+    if (!submitSlot) {
+        return;
+    }
+
+    if (isActive) {
+        submitSlot.classList.add("submit-slot-drag-over");
+    } else {
+        submitSlot.classList.remove("submit-slot-drag-over");
+    }
+}
+
+function clearSubmitSlotDragState() {
+    setSubmitSlotDragState(false);
+}
+
+function setupSubmitSlotDragAndDrop() {
+    const submitSlot = document.getElementById("submitSlot");
+
+    if (!submitSlot) {
+        return;
+    }
+
+    submitSlot.addEventListener("dragover", function (event) {
+        if (!canDropDraggedCard()) {
+            return;
+        }
+
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        setSubmitSlotDragState(true);
+    });
+
+    submitSlot.addEventListener("dragleave", function () {
+        setSubmitSlotDragState(false);
+    });
+
+    submitSlot.addEventListener("drop", function (event) {
+        event.preventDefault();
+        setSubmitSlotDragState(false);
+
+        if (!canDropDraggedCard()) {
+            alert("이 카드는 제출 슬롯에 놓을 수 없습니다.");
+            return;
+        }
+
+        selectedCardId = draggedCardId;
+        selectedHandIndex = draggedHandIndex;
+
+        draggedCardId = null;
+        draggedHandIndex = null;
+
+        render(currentState, getCurrentLogTexts());
+        updateSelectedCardPanel();
+    });
+}
+
+function clearSelectedCardState() {
+    selectedCardId = null;
+    selectedHandIndex = null;
+    draggedCardId = null;
+    draggedHandIndex = null;
+    isSubmittingCard = false;
+    clearSubmitSlotDragState();
+}
+
+function updateTurnSubmitStatusPanel(state) {
+    const panel = document.getElementById("turnSubmitStatusPanel");
+    const myStatus = document.getElementById("mySubmitStatus");
+    const enemyStatus = document.getElementById("enemySubmitStatus");
+
+    if (!panel || !myStatus || !enemyStatus) {
+        return;
+    }
+
+    if (!state || state.status !== "WAITING_ACTION") {
+        panel.classList.add("hidden");
+        return;
+    }
+
+    panel.classList.remove("hidden");
+
+    const enemyPlayerNumber = myPlayerNumber === 1 ? 2 : 1;
+
+    const mySubmitted =
+        state.pendingActions && state.pendingActions[myPlayerNumber];
+
+    const enemySubmitted =
+        state.pendingActions && state.pendingActions[enemyPlayerNumber];
+
+    setSubmitStatusChip(
+        myStatus,
+        mySubmitted ? "내 상태: 제출 완료" : "내 상태: 선택 필요",
+        mySubmitted
+    );
+
+    setSubmitStatusChip(
+        enemyStatus,
+        enemySubmitted ? "상대 상태: 제출 완료" : "상대 상태: 대기 중",
+        enemySubmitted
+    );
+}
+
+function setSubmitStatusChip(element, text, submitted) {
+    element.innerText = text;
+
+    element.classList.remove("waiting-chip");
+    element.classList.remove("submitted-chip");
+
+    if (submitted) {
+        element.classList.add("submitted-chip");
+    } else {
+        element.classList.add("waiting-chip");
+    }
+}
+
+function updateHandLockOverlay(state) {
+    const wrapper = document.getElementById("meHandWrapper");
+    const overlay = document.getElementById("meHandLockOverlay");
+
+    if (!wrapper || !overlay) {
+        return;
+    }
+
+    if (!state || state.status !== "WAITING_ACTION") {
+        wrapper.classList.remove("hand-locked");
+        overlay.classList.add("hidden");
+        return;
+    }
+
+    const alreadySubmitted =
+        state.pendingActions && state.pendingActions[myPlayerNumber];
+
+    if (alreadySubmitted) {
+        wrapper.classList.add("hand-locked");
+        overlay.classList.remove("hidden");
+    } else {
+        wrapper.classList.remove("hand-locked");
+        overlay.classList.add("hidden");
+    }
+}
+
+function animateHpChange(prefix, currentHp) {
+    const previousHp = previousHpByPlayer[prefix];
+
+    previousHpByPlayer[prefix] = currentHp;
+
+    if (previousHp === null || previousHp === currentHp) {
+        return;
+    }
+
+    const section = prefix === "me"
+        ? document.querySelector(".player.me")
+        : document.querySelector(".player.enemy");
+
+    if (!section) {
+        return;
+    }
+
+    section.classList.remove("hp-damaged");
+    section.classList.remove("hp-healed");
+
+    // 강제로 reflow를 발생시켜 같은 애니메이션도 반복 실행되게 함
+    void section.offsetWidth;
+
+    if (currentHp < previousHp) {
+        section.classList.add("hp-damaged");
+    } else if (currentHp > previousHp) {
+        section.classList.add("hp-healed");
+    }
+
+    setTimeout(() => {
+        section.classList.remove("hp-damaged");
+        section.classList.remove("hp-healed");
+    }, 650);
+}
+
+function resetVisualMemory() {
+    previousHpByPlayer = {
+        me: null,
+        enemy: null
+    };
+
+    previousLogCount = 0;
+}
+
+window.addEventListener("DOMContentLoaded", function () {
+    setupSubmitSlotDragAndDrop();
+    updateReconnectPanel();
+    loadMatchHistory();
+});

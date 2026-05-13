@@ -69,58 +69,142 @@
             </div>
         </div>
 
-        <div id="actionPanel" class="action-panel">
-            <p id="selectedCardText">선택한 카드: 없음</p>
-
-            <div class="action-buttons">
-                <button id="submitCardButton" onclick="submitSelectedCard()" disabled>
-                    선택한 카드 제출
-                </button>
-
-                <button id="surrenderButton" class="danger-button" onclick="surrenderGame()">
-                    항복
-                </button>
-            </div>
-        </div>
-
-        <div class="status">
-            <span id="turn"></span>
-            <span id="winner"></span>
-        </div>
-
-        <div class="board">
-            <section class="player enemy">
-                <h2 id="enemyTitle">상대</h2>
-                <p>
-                    HP: <span id="enemyHp"></span>
-                    / Mana: <span id="enemyMana"></span>
-                    / Field: <span id="enemyFieldCount"></span>
-                    / Deck: <span id="enemyDeckCount"></span>
-                    / Fatigue: <span id="enemyFatigue"></span>
-                </p>
-                <div id="enemyField" class="field"></div>
-                <h3 id="enemyHandTitle">상대 손패</h3>
-                <div id="enemyHand" class="hand"></div>
-            </section>
-
-            <section class="log">
-                <h3>전투 로그</h3>
+        <div class="game-layout">
+            <aside class="log side-log">
+                <div class="log-header">
+                    <h3>전투 로그</h3>
+                    <span id="logTurnBadge">Turn</span>
+                </div>
                 <ul id="logs"></ul>
-            </section>
+            </aside>
 
-            <section class="player me">
-                <h2 id="meTitle">나</h2>
-                <p>
-                    HP: <span id="meHp"></span>
-                    / Mana: <span id="meMana"></span>
-                    / Field: <span id="meFieldCount"></span>
-                    / Deck: <span id="meDeckCount"></span>
-                    / Fatigue: <span id="meFatigue"></span>
-                </p>
-                <div id="meField" class="field"></div>
-                <h3 id="meHandTitle">내 손패</h3>
-                <div id="meHand" class="hand"></div>
-            </section>
+            <main class="battle-area">
+                <section class="player enemy">
+                    <h2 id="enemyTitle">상대</h2>
+
+                    <div class="player-status-panel">
+                        <div class="status-bar-row">
+                            <span class="status-label">HP</span>
+                            <div class="status-bar hp-bar-bg">
+                                <div id="enemyHpBar" class="status-bar-fill hp-bar-fill"></div>
+                            </div>
+                            <span id="enemyHp" class="status-value"></span>
+                        </div>
+
+                        <div class="status-bar-row">
+                            <span class="status-label">MP</span>
+                            <div class="status-bar mana-bar-bg">
+                                <div id="enemyManaBar" class="status-bar-fill mana-bar-fill"></div>
+                            </div>
+                            <span id="enemyMana" class="status-value"></span>
+                        </div>
+
+                        <div class="mini-stat-row">
+                            <span>Hand <strong id="enemyHandCount"></strong></span>
+                            <span>Field <strong id="enemyFieldCount"></strong></span>
+                            <span>Deck <strong id="enemyDeckCount"></strong></span>
+                            <span>Fatigue <strong id="enemyFatigue"></strong></span>
+                        </div>
+                    </div>
+
+                    <h3 id="enemyHandTitle">상대 손패</h3>
+                    <div id="enemyHand" class="hand compact-hand"></div>
+
+                    <h3>상대 필드</h3>
+                    <div id="enemyField" class="field compact-field"></div>
+                </section>
+
+                <section class="battle-center">
+                    <div class="battle-center-card">
+                        <span id="turn"></span>
+                        <strong>VS</strong>
+                        <span id="winner"></span>
+                    </div>
+                </section>
+
+                <section class="player me">
+                    <h2 id="meTitle">나</h2>
+
+                    <div class="player-status-panel">
+                        <div class="status-bar-row">
+                            <span class="status-label">HP</span>
+                            <div class="status-bar hp-bar-bg">
+                                <div id="meHpBar" class="status-bar-fill hp-bar-fill"></div>
+                            </div>
+                            <span id="meHp" class="status-value"></span>
+                        </div>
+
+                        <div class="status-bar-row">
+                            <span class="status-label">MP</span>
+                            <div class="status-bar mana-bar-bg">
+                                <div id="meManaBar" class="status-bar-fill mana-bar-fill"></div>
+                            </div>
+                            <span id="meMana" class="status-value"></span>
+                        </div>
+
+                        <div class="mini-stat-row">
+                            <span>Hand <strong id="meHandCount"></strong></span>
+                            <span>Field <strong id="meFieldCount"></strong></span>
+                            <span>Deck <strong id="meDeckCount"></strong></span>
+                            <span>Fatigue <strong id="meFatigue"></strong></span>
+                        </div>
+                    </div>
+
+                    <h3>내 필드</h3>
+                    <div id="meField" class="field compact-field"></div>
+
+                    <h3 id="meHandTitle">내 손패</h3>
+
+                    <div id="meHandWrapper" class="hand-wrapper">
+                        <div id="meHand" class="hand"></div>
+
+                        <div id="meHandLockOverlay" class="hand-lock-overlay hidden">
+                            <div class="hand-lock-message">
+                                <strong>이번 턴 제출 완료</strong>
+                                <span>상대 플레이어를 기다리는 중입니다</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="actionPanel" class="action-panel in-hand-action">
+                        <div class="submit-slot-wrapper">
+                            <div class="submit-slot-header">
+                                <div>
+                                    <h3>이번 턴 제출 카드</h3>
+                                    <p id="selectedCardText">선택한 카드: 없음</p>
+                                </div>
+
+                                <button id="clearSelectedButton" class="secondary-button" onclick="clearSelectedCard()" disabled>
+                                    선택 해제
+                                </button>
+                            </div>
+
+                            <div id="submitSlot" class="submit-slot empty-submit-slot">
+                                <span>손패에서 카드를 선택하세요</span>
+                            </div>
+
+                            <div id="turnSubmitStatusPanel" class="turn-submit-status-panel">
+                                <div id="mySubmitStatus" class="submit-status-chip waiting-chip">
+                                    내 상태: 선택 필요
+                                </div>
+                                <div id="enemySubmitStatus" class="submit-status-chip waiting-chip">
+                                    상대 상태: 대기 중
+                                </div>
+                            </div>
+
+                            <div class="action-buttons submit-slot-buttons">
+                                <button id="submitCardButton" onclick="submitSelectedCard()" disabled>
+                                    선택한 카드 제출
+                                </button>
+
+                                <button id="surrenderButton" class="danger-button" onclick="surrenderGame()">
+                                    항복
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
         </div>
     </div>
 </div>

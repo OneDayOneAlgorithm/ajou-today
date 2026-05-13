@@ -5,6 +5,7 @@ import java.util.List;
 
 public class PlayerState {
     public static final int MAX_FIELD_SIZE = 5;
+    public static final int MAX_HAND_SIZE = 10;
 
     private String name;
     private int hp;
@@ -88,15 +89,20 @@ public class PlayerState {
         this.hand.clear();
     }
 
-    public Integer drawFromDeck() {
+    public DrawResult drawFromDeck() {
         if (this.deck.isEmpty()) {
-            return null;
+            return DrawResult.deckEmpty();
         }
 
         Integer cardId = this.deck.remove(0);
+
+        if (this.hand.size() >= MAX_HAND_SIZE) {
+            return DrawResult.burned(cardId);
+        }
+
         this.hand.add(cardId);
 
-        return cardId;
+        return DrawResult.drawn(cardId);
     }
 
     public int getDeckCount() {
@@ -105,6 +111,14 @@ public class PlayerState {
 
     public int getMaxDeckSize() {
         return maxDeckSize;
+    }
+
+    public int getMaxHandSize() {
+        return MAX_HAND_SIZE;
+    }
+
+    public boolean isHandFull() {
+        return this.hand.size() >= MAX_HAND_SIZE;
     }
 
     public int takeFatigueDamage() {
