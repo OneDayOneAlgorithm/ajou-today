@@ -16,6 +16,8 @@ let previousHpByPlayer = {
 };
 
 let previousLogCount = 0;
+let previousGameStatus = null;
+let gameStartAnimationShownForGameId = null;
 
 const SAVED_GAME_ID_KEY = "lineDuelGameId";
 const SAVED_PLAYER_NUMBER_KEY = "lineDuelPlayerNumber";
@@ -42,6 +44,8 @@ async function createRoom() {
     lastHistoryRefreshGameId = null;
 
     resetVisualMemory();
+    previousGameStatus = null;
+    gameStartAnimationShownForGameId = null;
 
     saveCurrentGame();
     hideResultPanel();
@@ -90,6 +94,8 @@ async function joinRoom() {
     lastHistoryRefreshGameId = null;
 
     resetVisualMemory();
+    previousGameStatus = null;
+    gameStartAnimationShownForGameId = null;
 
     saveCurrentGame();
     hideResultPanel();
@@ -110,7 +116,10 @@ function showRoomInfo() {
     document.getElementById("game").classList.remove("hidden");
 
     document.getElementById("gameIdText").innerText = gameId;
-    document.getElementById("myPlayerText").innerText = `Player ${myPlayerNumber}`;
+    document.getElementById("myPlayerText").innerText =
+        getPlayerDisplayName(myPlayerNumber);
+
+    hideLobbyPanels();
 }
 
 async function copyRoomCode() {
@@ -382,6 +391,8 @@ function render(state, logs) {
     renderLogs(logs);
     // renderPendingStatus(state);
     updateWaitingPanel(state);
+    updateRoomInfoVisibility(state);
+    updateGameStartAnimation(state);
     updateTurnSubmitStatusPanel(state);
     updateHandLockOverlay(state);
     updateSelectedCardPanel();
@@ -395,8 +406,11 @@ function renderPerspectiveBoard(state) {
     const myPlayer = myNumber === 1 ? state.player1 : state.player2;
     const enemyPlayer = enemyNumber === 1 ? state.player1 : state.player2;
 
-    document.getElementById("meTitle").innerText = `나 - Player ${myNumber}`;
-    document.getElementById("enemyTitle").innerText = `상대 - Player ${enemyNumber}`;
+    document.getElementById("meTitle").innerText =
+        `나 - ${getPlayerDisplayName(myNumber)}`;
+
+    document.getElementById("enemyTitle").innerText =
+        `상대 - ${getPlayerDisplayName(enemyNumber)}`;
 
     document.getElementById("meHandTitle").innerText = `내 손패`;
     document.getElementById("enemyHandTitle").innerText = `상대 손패`;
@@ -689,6 +703,8 @@ function goToLobby() {
     selectedHandIndex = null;
 
     resetVisualMemory();
+    previousGameStatus = null;
+    gameStartAnimationShownForGameId = null;
 
 
     if (stompClient && stompClient.connected) {
@@ -739,7 +755,7 @@ function goToLobby() {
         handOverlay.classList.add("hidden");
     }
 
-    updateReconnectPanel();
+    showLobbyPanels();
 }
 
 function updateResultPanel(state) {
@@ -973,6 +989,8 @@ async function reconnectGame() {
     lastHistoryRefreshGameId = null;
 
     resetVisualMemory();
+    previousGameStatus = null;
+    gameStartAnimationShownForGameId = null;
 
     saveCurrentGame();
     hideResultPanel();
@@ -1465,13 +1483,17 @@ function updateTurnSubmitStatusPanel(state) {
 
     setSubmitStatusChip(
         myStatus,
-        mySubmitted ? "내 상태: 제출 완료" : "내 상태: 선택 필요",
+        mySubmitted
+            ? `${getPlayerDisplayName(myPlayerNumber)}: 제출 완료`
+            : `${getPlayerDisplayName(myPlayerNumber)}: 선택 필요`,
         mySubmitted
     );
 
     setSubmitStatusChip(
         enemyStatus,
-        enemySubmitted ? "상대 상태: 제출 완료" : "상대 상태: 대기 중",
+        enemySubmitted
+            ? `${getPlayerDisplayName(enemyPlayerNumber)}: 제출 완료`
+            : `${getPlayerDisplayName(enemyPlayerNumber)}: 대기 중`,
         enemySubmitted
     );
 }
@@ -1557,6 +1579,111 @@ function resetVisualMemory() {
     };
 
     previousLogCount = 0;
+}
+
+function getPlayerDisplayName(playerNumber) {
+    if (playerNumber === 1) {
+        return "방장";
+    }
+
+    if (playerNumber === 2) {
+        return "도전자";
+    }
+
+    return `Player ${playerNumber}`;
+}
+
+function hideLobbyPanels() {
+    const lobbyPanel = document.getElementById("lobbyPanel");
+    const reconnectPanel = document.getElementById("reconnectPanel");
+    const matchHistoryPanel = document.getElementById("matchHistoryPanel");
+
+    if (lobbyPanel) {
+        lobbyPanel.classList.add("hidden");
+    }
+
+    if (reconnectPanel) {
+        reconnectPanel.classList.add("hidden");
+    }
+
+    if (matchHistoryPanel) {
+        matchHistoryPanel.classList.add("hidden");
+    }
+}
+
+function showLobbyPanels() {
+    const lobbyPanel = document.getElementById("lobbyPanel");
+    const matchHistoryPanel = document.getElementById("matchHistoryPanel");
+
+    if (lobbyPanel) {
+        lobbyPanel.classList.remove("hidden");
+    }
+
+    if (matchHistoryPanel) {
+        matchHistoryPanel.classList.remove("hidden");
+    }
+
+    updateReconnectPanel();
+}
+
+function updateRoomInfoVisibility(state) {
+    const roomInfo = document.getElementById("roomInfo");
+
+    if (!roomInfo) {
+        return;
+    }
+
+    if (!state) {
+        roomInfo.classList.add("hidden");
+        return;
+    }
+
+    if (state.status === "WAITING_PLAYER") {
+        roomInfo.classList.remove("hidden");
+    } else {
+        roomInfo.classList.add("hidden");
+    }
+}
+
+function updateGameStartAnimation(state) {
+    if (!state) {
+        previousGameStatus = null;
+        return;
+    }
+
+    const isGameStarted =
+        state.status === "WAITING_ACTION" &&
+        previousGameStatus !== "WAITING_ACTION" &&
+        gameStartAnimationShownForGameId !== state.gameId;
+
+    previousGameStatus = state.status;
+
+    if (!isGameStarted) {
+        return;
+    }
+
+    gameStartAnimationShownForGameId = state.gameId;
+    showGameStartAnimation();
+}
+
+function showGameStartAnimation() {
+    const overlay = document.getElementById("gameStartOverlay");
+
+    if (!overlay) {
+        return;
+    }
+
+    overlay.classList.remove("hidden");
+    overlay.classList.remove("game-start-playing");
+
+    void overlay.offsetWidth;
+
+    overlay.classList.add("game-start-playing");
+
+    setTimeout(() => {
+        overlay.classList.add("hidden");
+        overlay.classList.remove("game-start-playing");
+    }, 1600);
 }
 
 window.addEventListener("DOMContentLoaded", function () {

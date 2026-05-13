@@ -1285,3 +1285,101 @@ button:hover {
         max-width: 960px;
     }
 }
+
+.lobby.hidden,
+.reconnect-panel.hidden,
+.match-history-panel.hidden,
+.room-info.hidden,
+.waiting-panel.hidden,
+.result-panel.hidden,
+.game.hidden {
+    display: none;
+}
+
+.game-start-overlay {
+    position: fixed;
+    inset: 0;
+    background:
+            radial-gradient(circle at center, rgba(250, 204, 21, 0.18), transparent 42%),
+            rgba(17, 24, 39, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    pointer-events: none;
+}
+
+.game-start-overlay.hidden {
+    display: none;
+}
+
+.game-start-card {
+    min-width: 360px;
+    border-radius: 24px;
+    padding: 34px 42px;
+    background:
+            linear-gradient(135deg, rgba(37, 99, 235, 0.32), rgba(127, 29, 29, 0.3)),
+            #111827;
+    border: 2px solid #facc15;
+    box-shadow:
+            0 0 0 6px rgba(250, 204, 21, 0.12),
+            0 28px 70px rgba(0, 0, 0, 0.55);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    transform: scale(0.88);
+    opacity: 0;
+}
+
+.game-start-subtitle {
+    color: #93c5fd;
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 4px;
+}
+
+.game-start-card strong {
+    color: #facc15;
+    font-size: 48px;
+    font-weight: 1000;
+    letter-spacing: 3px;
+    text-shadow: 0 6px 20px rgba(250, 204, 21, 0.35);
+}
+
+.game-start-desc {
+    color: #e5e7eb;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.game-start-playing .game-start-card {
+    animation: duelStartPop 1.45s ease forwards;
+}
+
+@keyframes duelStartPop {
+    0% {
+        transform: scale(0.7) rotate(-3deg);
+        opacity: 0;
+    }
+
+    18% {
+        transform: scale(1.08) rotate(1deg);
+        opacity: 1;
+    }
+
+    35% {
+        transform: scale(1) rotate(0);
+        opacity: 1;
+    }
+
+    78% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1.08);
+        opacity: 0;
+    }
+}

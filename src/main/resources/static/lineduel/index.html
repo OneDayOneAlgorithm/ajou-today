@@ -10,7 +10,7 @@
     <h1>Line Duel</h1>
     <p class="subtitle">누구나 바로 이해하는 1대1 카드 전투</p>
 
-    <div class="lobby">
+    <div id="lobbyPanel" class="lobby">
         <button onclick="createRoom()">방 만들기</button>
 
         <div class="join-box">
@@ -51,6 +51,13 @@
     </div>
 
     <div id="game" class="game hidden">
+        <div id="gameStartOverlay" class="game-start-overlay hidden">
+            <div class="game-start-card">
+                <span class="game-start-subtitle">LINE DUEL</span>
+                <strong>DUEL START</strong>
+                <span class="game-start-desc">전투를 시작합니다</span>
+            </div>
+        </div>
         <div id="resultPanel" class="result-panel hidden">
             <h2 id="resultTitle">게임 종료</h2>
             <p id="resultMessage"></p>
